@@ -1,0 +1,33 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: logitarget-backend
+    environment:
+      DJANGO_SECRET_KEY: dev-only-change-this-key-please-32chars
+      DJANGO_DEBUG: "1"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost
+      CSRF_TRUSTED_ORIGINS: http://localhost:5173,http://localhost
+      SQLITE_PATH: /app/data/db.sqlite3
+      DJANGO_SUPERUSER_EMAIL: admin@logitarget.com
+      DJANGO_SUPERUSER_PASSWORD: Admin123
+      DJANGO_SUPERUSER_FULL_NAME: LogiTarget Admin
+      DJANGO_SUPERUSER_COMPANY: LogiTarget HQ
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/data:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: logitarget-frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
