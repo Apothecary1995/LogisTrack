@@ -3,7 +3,7 @@ package main
 //we will send message to queue from this worker 
 
 import(
-"fmt"
+
 "log"
 "os"
 amqp "github.com/rabbitmq/amqp091-go"
