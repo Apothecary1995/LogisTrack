@@ -3,7 +3,7 @@ package main
 
 import (
 
-	"os"
+	
 	"testing"
 )
 func TestConnectRabbitMQ_InvalidURL(t *testing.T) {
@@ -15,6 +15,3 @@ func TestConnectRabbitMQ_InvalidURL(t *testing.T) {
 	}
 }
 //will add geturl test needed
-func main(){
-
-}

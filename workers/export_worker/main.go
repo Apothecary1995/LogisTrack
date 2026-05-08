@@ -2,13 +2,16 @@ package main
 
 //we will send message to queue from this worker 
 
-import main(
-"fmt"
+import(
+
 "log"
 "os"
 amqp "github.com/rabbitmq/amqp091-go"
 
 )
+
+
+
 
 func connectRabbitMQ(url string) (*amqp.Connection, error) {
 	conn, err := amqp.Dial(url)
@@ -26,7 +29,7 @@ func main(){
 
 //this block of code here if we cant get url will route it to default url for mq
 url := os.Getenv("RABBITMQ_URL")
-if url = ""{
+if url == ""{
 	url = "amqp://guest:guest@localhost:5672/"
 }
 
