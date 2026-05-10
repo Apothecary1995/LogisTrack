@@ -9,14 +9,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install cloudflared
+        run: |
+          wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared-linux-amd64
+          sudo mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
+
       - name: Deploy to server
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
+          host: ssh.ahmetcengiz.dev
+          username: apothecary
           key: ${{ secrets.SERVER_SSH_KEY }}
+          proxy_host: ssh.ahmetcengiz.dev
+          proxy_username: apothecary
+          proxy_key: ${{ secrets.SERVER_SSH_KEY }}
+          proxy_use_insecure_cipher: true
           script: |
             cd ~/LogisTrack/LogisTrack
             git pull origin main
             docker compose up -d --build
-            echo "Deployment is successfull"
+            echo "Deployed"
