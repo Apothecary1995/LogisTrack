@@ -57,7 +57,7 @@ services:
 
   export_worker:
     build:
-      context: ./workers/export_worker
+      context: ../../workers/export_worker
     container_name: logistrack-export-worker
     environment:
       RABBITMQ_URL: amqp://logistrack:logistrack_pass@rabbitmq:5672/
