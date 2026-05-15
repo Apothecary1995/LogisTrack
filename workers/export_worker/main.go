@@ -9,6 +9,14 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+func getURL() string {
+	url := os.Getenv("RABBITMQ_URL")
+	if url == "" {
+		url = "amqp://guest:guest@localhost:5672/"
+	}
+	return url
+}
+
 func connectRabbitMQ(url string) (*amqp.Connection, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
@@ -20,10 +28,7 @@ func connectRabbitMQ(url string) (*amqp.Connection, error) {
 func main() {
 
 	//this block of code here if we cant get url will route it to default url for mq
-	url := os.Getenv("RABBITMQ_URL")
-	if url == "" {
-		url = "amqp://guest:guest@localhost:5672/"
-	}
+	url := getURL()
 
 	//this block of code is here for connection purposes
 
