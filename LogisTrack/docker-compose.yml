@@ -24,7 +24,7 @@ services:
     environment:
       DJANGO_SECRET_KEY: dev-only-change-this-key-please-32chars
       DJANGO_DEBUG: "1"
-      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,logistrack.ahmetcengiz.dev
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,logistrack.ahmetcengiz.dev,api.logistrack.ahmetcengiz.dev
       CORS_ALLOWED_ORIGINS: http://localhost:5173,https://logistrack.ahmetcengiz.dev
       CSRF_TRUSTED_ORIGINS: http://localhost:5173,https://logistrack.ahmetcengiz.dev
       SQLITE_PATH: /app/data/db.sqlite3
