@@ -46,10 +46,9 @@ services:
   frontend:
     build:
       context: ./frontend
-    
-    args:
-      VITE_API_BASE_URL: https://api.logistrack.ahmetcengiz.dev/api
-      container_name: logitarget-frontend
+      args:
+        VITE_API_BASE_URL: https://api.ahmetcengiz.dev/api
+    container_name: logitarget-frontend
     depends_on:
       - backend
     ports:
