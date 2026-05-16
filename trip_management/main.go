@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"math"
 	"net/http"
 	"sync"
 	"time"
@@ -22,8 +23,20 @@ type Trip struct {
 	CreatedAt     string `json:"createdAt"`
 }
 
+// optional coordinates (nil if not provided)
+type coord = *float64
+
+type TripWithCoords struct {
+	Trip
+	OriginLat  coord   `json:"originLat,omitempty"`
+	OriginLng  coord   `json:"originLng,omitempty"`
+	DestLat    coord   `json:"destLat,omitempty"`
+	DestLng    coord   `json:"destLng,omitempty"`
+	DistanceKM float64 `json:"distanceKM,omitempty"`
+}
+
 var (
-	trips   []Trip
+	trips   []TripWithCoords
 	tripsMu sync.Mutex
 	nextID  int64 = 1
 )
@@ -46,7 +59,7 @@ func tripsHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(trips)
 
 	case http.MethodPost:
-		var trip Trip
+		var trip TripWithCoords
 		if err := json.NewDecoder(r.Body).Decode(&trip); err != nil {
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
@@ -61,6 +74,11 @@ func tripsHandler(w http.ResponseWriter, r *http.Request) {
 			trip.CreatedAt = time.Now().Format(time.RFC3339)
 		}
 
+		// compute distance if all coordinates provided
+		if trip.OriginLat != nil && trip.OriginLng != nil && trip.DestLat != nil && trip.DestLng != nil {
+			trip.DistanceKM = haversine(*trip.OriginLat, *trip.OriginLng, *trip.DestLat, *trip.DestLng)
+		}
+
 		tripsMu.Lock()
 		trip.ID = nextID
 		nextID++
@@ -73,4 +91,13 @@ func tripsHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+func haversine(lat1, lon1, lat2, lon2 float64) float64 {
+	const R = 6371.0 // Earth radius in km
+	dLat := (lat2 - lat1) * math.Pi / 180.0
+	dLon := (lon2 - lon1) * math.Pi / 180.0
+	a := math.Sin(dLat/2)*math.Sin(dLat/2) + math.Cos(lat1*math.Pi/180.0)*math.Cos(lat2*math.Pi/180.0)*math.Sin(dLon/2)*math.Sin(dLon/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	return R * c
 }

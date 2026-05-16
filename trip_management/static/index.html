@@ -22,6 +22,25 @@
                 Varış Yeri
                 <input type="text" name="destination" placeholder="Ankara" required />
             </label>
+            <fieldset class="coords">
+                <legend>Koordinatlar (opsiyonel)</legend>
+                <label>
+                    Kalkış Enlem
+                    <input type="number" step="any" name="originLat" placeholder="41.01" />
+                </label>
+                <label>
+                    Kalkış Boylam
+                    <input type="number" step="any" name="originLng" placeholder="28.97" />
+                </label>
+                <label>
+                    Varış Enlem
+                    <input type="number" step="any" name="destLat" placeholder="39.92" />
+                </label>
+                <label>
+                    Varış Boylam
+                    <input type="number" step="any" name="destLng" placeholder="32.85" />
+                </label>
+            </fieldset>
             <label>
                 Kalkış Tarihi & Saati
                 <input type="datetime-local" name="departureTime" />

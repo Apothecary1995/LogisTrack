@@ -21,6 +21,7 @@ async function loadTrips() {
             <p><strong>Araç:</strong> ${trip.vehicle || '---'}</p>
             <p><strong>Şoför:</strong> ${trip.driver || '---'}</p>
             <p><strong>Yük:</strong> ${trip.cargo || '---'}</p>
+            ${typeof trip.distanceKM !== 'undefined' && trip.distanceKM !== 0 ? `<p><strong>Mesafe:</strong> ${trip.distanceKM.toFixed(2)} km</p>` : ''}
             <p><strong>Notlar:</strong> ${trip.notes || '---'}</p>
         </div>
     `).join('');
@@ -33,7 +34,12 @@ form.addEventListener('submit', async (event) => {
     const trip = {};
 
     formData.forEach((value, key) => {
-        trip[key] = value;
+        if (key === 'originLat' || key === 'originLng' || key === 'destLat' || key === 'destLng') {
+            const n = parseFloat(value);
+            if (!Number.isNaN(n)) trip[key] = n;
+        } else {
+            trip[key] = value;
+        }
     });
 
     const response = await fetch('/api/trips', {
