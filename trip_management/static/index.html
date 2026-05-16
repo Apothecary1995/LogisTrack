@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sefer Oluşturma - Trip Management</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="container">
+        <h1>Sefer Oluşturma Formu</h1>
+        <form id="trip-form">
+            <label>
+                Sefer Kodu
+                <input type="text" name="tripCode" placeholder="TRIP123" required />
+            </label>
+            <label>
+                Kalkış Yeri
+                <input type="text" name="origin" placeholder="İstanbul" required />
+            </label>
+            <label>
+                Varış Yeri
+                <input type="text" name="destination" placeholder="Ankara" required />
+            </label>
+            <label>
+                Kalkış Tarihi & Saati
+                <input type="datetime-local" name="departureTime" />
+            </label>
+            <label>
+                Varış Tarihi & Saati
+                <input type="datetime-local" name="arrivalTime" />
+            </label>
+            <label>
+                Araç
+                <input type="text" name="vehicle" placeholder="Plaka / Araç tipi" />
+            </label>
+            <label>
+                Şoför
+                <input type="text" name="driver" placeholder="Şoför adı" />
+            </label>
+            <label>
+                Yük Türü
+                <input type="text" name="cargo" placeholder="Yük açıklaması" />
+            </label>
+            <label>
+                Notlar
+                <textarea name="notes" placeholder="Ek bilgiler"></textarea>
+            </label>
+            <button type="submit">Sefer Oluştur</button>
+        </form>
+
+        <div id="message" class="message"></div>
+
+        <h2>Oluşturulan Seferler</h2>
+        <div id="trip-list" class="trip-list">
+            <p>Henüz oluşturulmuş sefer yok.</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
