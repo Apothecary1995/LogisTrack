@@ -45,7 +45,7 @@ func handleNotification(msg NotificationMessage) error {
 
 	if msg.NotifyPush && msg.UserID != 0 {
 		log.Printf("[PUSH] UserID: %d | Subject: %s", msg.UserID, msg.Subject)
-		// FCM asap
+		// FCM cloud messaging asap
 	}
 
 	if !msg.NotifyEmail && !msg.NotifyPush {
