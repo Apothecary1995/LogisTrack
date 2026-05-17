@@ -70,6 +70,28 @@
 
         <div id="message" class="message"></div>
 
+        <section class="filter-panel">
+            <h2>Sefer Arama ve Filtreleme</h2>
+            <form id="trip-filter-form" class="filter-form">
+                <label>
+                    Sefer Kodu
+                    <input type="text" name="searchCode" placeholder="TRIP123" />
+                </label>
+                <label>
+                    Kalkış Yeri
+                    <input type="text" name="searchOrigin" placeholder="İstanbul" />
+                </label>
+                <label>
+                    Varış Yeri
+                    <input type="text" name="searchDestination" placeholder="Ankara" />
+                </label>
+                <div class="filter-actions">
+                    <button type="submit">Filtrele</button>
+                    <button type="button" id="clear-filter">Temizle</button>
+                </div>
+            </form>
+        </section>
+
         <h2>Oluşturulan Seferler</h2>
         <div id="trip-list" class="trip-list">
             <p>Henüz oluşturulmuş sefer yok.</p>

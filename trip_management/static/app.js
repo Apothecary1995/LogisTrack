@@ -1,10 +1,13 @@
 const form = document.getElementById('trip-form');
 const waybillForm = document.getElementById('waybill-form');
+const filterForm = document.getElementById('trip-filter-form');
+const clearFilterButton = document.getElementById('clear-filter');
 const message = document.getElementById('message');
 const tripList = document.getElementById('trip-list');
 const archivedTripList = document.getElementById('archived-trip-list');
 const waybillList = document.getElementById('waybill-list');
 const waybillTripSelect = document.getElementById('waybill-trip');
+let allTrips = [];
 
 function renderTrips(trips, container, archived) {
     if (!trips.length) {
@@ -57,13 +60,29 @@ function renderWaybills(waybills) {
 async function loadTrips() {
     const response = await fetch('/api/trips');
     const trips = await response.json();
+    allTrips = trips;
+    applyTripFilter();
+    populateWaybillTripSelect(trips.filter(trip => !trip.archived));
+}
 
-    const activeTrips = trips.filter(trip => !trip.archived);
-    const archivedTrips = trips.filter(trip => trip.archived);
+function applyTripFilter() {
+    const formData = new FormData(filterForm);
+    const code = formData.get('searchCode').toString().trim().toLowerCase();
+    const origin = formData.get('searchOrigin').toString().trim().toLowerCase();
+    const destination = formData.get('searchDestination').toString().trim().toLowerCase();
+
+    const filtered = allTrips.filter(trip => {
+        const matchesCode = !code || trip.tripCode.toLowerCase().includes(code);
+        const matchesOrigin = !origin || trip.origin.toLowerCase().includes(origin);
+        const matchesDestination = !destination || trip.destination.toLowerCase().includes(destination);
+        return matchesCode && matchesOrigin && matchesDestination;
+    });
+
+    const activeTrips = filtered.filter(trip => !trip.archived);
+    const archivedTrips = filtered.filter(trip => trip.archived);
 
     renderTrips(activeTrips, tripList, false);
     renderTrips(archivedTrips, archivedTripList, true);
-    populateWaybillTripSelect(activeTrips);
 
     const archiveButtons = document.querySelectorAll('.archive-button');
     archiveButtons.forEach(button => button.addEventListener('click', async () => {
@@ -142,6 +161,16 @@ form.addEventListener('submit', async (event) => {
     form.reset();
     await loadTrips();
     await loadWaybills();
+});
+
+filterForm.addEventListener('submit', event => {
+    event.preventDefault();
+    applyTripFilter();
+});
+
+clearFilterButton.addEventListener('click', () => {
+    filterForm.reset();
+    applyTripFilter();
 });
 
 waybillForm.addEventListener('submit', async (event) => {

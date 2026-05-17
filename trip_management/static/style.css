@@ -77,6 +77,30 @@ button:hover {
     background: #1d4ed8;
 }
 
+.filter-panel {
+    margin-top: 24px;
+    margin-bottom: 24px;
+    padding: 18px;
+    border-radius: 18px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+}
+
+.filter-form {
+    display: grid;
+    gap: 16px;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.filter-form button {
+    width: fit-content;
+}
+
 .message {
     margin-top: 18px;
     padding: 14px 16px;
