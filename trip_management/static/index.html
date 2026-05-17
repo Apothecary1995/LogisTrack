@@ -79,6 +79,63 @@
         <div id="archived-trip-list" class="trip-list">
             <p>Henüz arşivlenmiş sefer yok.</p>
         </div>
+
+        <h2>Waybill Yönetimi</h2>
+        <form id="waybill-form" class="waybill-form">
+            <label>
+                Waybill No
+                <input type="text" name="waybillNumber" placeholder="WB-12345" required />
+            </label>
+            <label>
+                Sefer Seçimi
+                <select name="tripId" id="waybill-trip">
+                    <option value="">Sefer seçin (opsiyonel)</option>
+                </select>
+            </label>
+            <label>
+                Gönderen
+                <input type="text" name="sender" placeholder="Firma / kişi" />
+            </label>
+            <label>
+                Alıcı
+                <input type="text" name="receiver" placeholder="Firma / kişi" />
+            </label>
+            <label>
+                Yük Açıklaması
+                <input type="text" name="cargo" placeholder="Koli, palet, vs." />
+            </label>
+            <label>
+                Ağırlık
+                <input type="text" name="weight" placeholder="250 kg" />
+            </label>
+            <label>
+                Hacim
+                <input type="text" name="volume" placeholder="2 m³" />
+            </label>
+            <label>
+                Alım Yeri
+                <input type="text" name="pickup" placeholder="İstanbul deposu" />
+            </label>
+            <label>
+                Teslim Yeri
+                <input type="text" name="delivery" placeholder="Ankara şubesi" />
+            </label>
+            <label>
+                Durum
+                <select name="status">
+                    <option value="Pending">Beklemede</option>
+                    <option value="Loaded">Yüklendi</option>
+                    <option value="InTransit">Yolda</option>
+                    <option value="Delivered">Teslim Edildi</option>
+                </select>
+            </label>
+            <button type="submit">Waybill Oluştur</button>
+        </form>
+
+        <h2>Waybill Listesi</h2>
+        <div id="waybill-list" class="trip-list">
+            <p>Henüz oluşturulmuş waybill yok.</p>
+        </div>
     </div>
 
     <script src="app.js"></script>

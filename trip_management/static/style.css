@@ -119,6 +119,25 @@ button:hover {
     color: #475569;
 }
 
+.waybill-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+}
+
+.waybill-card strong {
+    display: block;
+    margin-bottom: 10px;
+    color: #111827;
+}
+
+.waybill-card p {
+    margin: 0 0 8px;
+    color: #475569;
+}
+
 .trip-card.archived {
     background: #f8fafc;
     border-color: #c7d2fe;

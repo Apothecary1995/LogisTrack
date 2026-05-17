@@ -1,7 +1,10 @@
 const form = document.getElementById('trip-form');
+const waybillForm = document.getElementById('waybill-form');
 const message = document.getElementById('message');
 const tripList = document.getElementById('trip-list');
 const archivedTripList = document.getElementById('archived-trip-list');
+const waybillList = document.getElementById('waybill-list');
+const waybillTripSelect = document.getElementById('waybill-trip');
 
 function renderTrips(trips, container, archived) {
     if (!trips.length) {
@@ -29,6 +32,28 @@ function renderTrips(trips, container, archived) {
     `).join('');
 }
 
+function renderWaybills(waybills) {
+    if (!waybills.length) {
+        waybillList.innerHTML = '<p>Henüz oluşturulmuş waybill yok.</p>';
+        return;
+    }
+
+    waybillList.innerHTML = waybills.map(waybill => `
+        <div class="waybill-card">
+            <strong>${waybill.waybillNumber}</strong>
+            <p><strong>Sefer:</strong> ${waybill.tripCode || '—'} ${waybill.tripId ? `(ID:${waybill.tripId})` : ''}</p>
+            <p><strong>Gönderen:</strong> ${waybill.sender || '---'}</p>
+            <p><strong>Alıcı:</strong> ${waybill.receiver || '---'}</p>
+            <p><strong>Yük:</strong> ${waybill.cargo || '---'}</p>
+            <p><strong>Ağırlık:</strong> ${waybill.weight || '---'}</p>
+            <p><strong>Hacim:</strong> ${waybill.volume || '---'}</p>
+            <p><strong>Alım Yeri:</strong> ${waybill.pickup || '---'}</p>
+            <p><strong>Teslim Yeri:</strong> ${waybill.delivery || '---'}</p>
+            <p><strong>Durum:</strong> ${waybill.status || 'Beklemede'}</p>
+        </div>
+    `).join('');
+}
+
 async function loadTrips() {
     const response = await fetch('/api/trips');
     const trips = await response.json();
@@ -38,6 +63,7 @@ async function loadTrips() {
 
     renderTrips(activeTrips, tripList, false);
     renderTrips(archivedTrips, archivedTripList, true);
+    populateWaybillTripSelect(activeTrips);
 
     const archiveButtons = document.querySelectorAll('.archive-button');
     archiveButtons.forEach(button => button.addEventListener('click', async () => {
@@ -45,6 +71,22 @@ async function loadTrips() {
         const archived = button.dataset.archived === 'true';
         await toggleArchive(id, !archived);
     }));
+}
+
+function populateWaybillTripSelect(trips) {
+    waybillTripSelect.innerHTML = '<option value="">Sefer seçin (opsiyonel)</option>';
+    trips.forEach(trip => {
+        const option = document.createElement('option');
+        option.value = trip.id;
+        option.textContent = `${trip.tripCode} — ${trip.origin} → ${trip.destination}`;
+        waybillTripSelect.appendChild(option);
+    });
+}
+
+async function loadWaybills() {
+    const response = await fetch('/api/waybills');
+    const waybills = await response.json();
+    renderWaybills(waybills);
 }
 
 async function toggleArchive(id, archived) {
@@ -63,7 +105,8 @@ async function toggleArchive(id, archived) {
 
     message.textContent = archived ? 'Sefer arşivlendi.' : 'Sefer arşivi kaldırıldı.';
     message.className = 'message success';
-    loadTrips();
+    await loadTrips();
+    await loadWaybills();
 }
 
 form.addEventListener('submit', async (event) => {
@@ -97,7 +140,49 @@ form.addEventListener('submit', async (event) => {
     message.textContent = 'Sefer başarıyla oluşturuldu.';
     message.className = 'message success';
     form.reset();
-    loadTrips();
+    await loadTrips();
+    await loadWaybills();
 });
 
-loadTrips();
+waybillForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(waybillForm);
+    const waybill = {};
+
+    formData.forEach((value, key) => {
+        if (key === 'tripId') {
+            const n = parseInt(value, 10);
+            if (!Number.isNaN(n)) {
+                waybill[key] = n;
+            }
+        } else {
+            waybill[key] = value;
+        }
+    });
+
+    const response = await fetch('/api/waybills', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(waybill),
+    });
+
+    if (!response.ok) {
+        const text = await response.text();
+        message.textContent = `Hata: ${text}`;
+        message.className = 'message error';
+        return;
+    }
+
+    message.textContent = 'Waybill başarıyla oluşturuldu.';
+    message.className = 'message success';
+    waybillForm.reset();
+    await loadWaybills();
+});
+
+async function init() {
+    await loadTrips();
+    await loadWaybills();
+}
+
+init();

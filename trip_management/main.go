@@ -37,16 +37,36 @@ type TripWithCoords struct {
 	ArchivedAt string  `json:"archivedAt,omitempty"`
 }
 
+type Waybill struct {
+	ID            int64  `json:"id"`
+	WaybillNumber string `json:"waybillNumber"`
+	TripID        int64  `json:"tripId,omitempty"`
+	TripCode      string `json:"tripCode,omitempty"`
+	Sender        string `json:"sender"`
+	Receiver      string `json:"receiver"`
+	Cargo         string `json:"cargo"`
+	Weight        string `json:"weight"`
+	Volume        string `json:"volume"`
+	Pickup        string `json:"pickup"`
+	Delivery      string `json:"delivery"`
+	Status        string `json:"status"`
+	CreatedAt     string `json:"createdAt"`
+}
+
 var (
-	trips   []TripWithCoords
-	tripsMu sync.Mutex
-	nextID  int64 = 1
+	trips         []TripWithCoords
+	tripsMu       sync.Mutex
+	waybills      []Waybill
+	waybillsMu    sync.Mutex
+	nextID        int64 = 1
+	waybillNextID int64 = 1
 )
 
 func main() {
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 	http.HandleFunc("/api/trips", tripsHandler)
 	http.HandleFunc("/api/trips/archive", archiveHandler)
+	http.HandleFunc("/api/waybills", waybillsHandler)
 
 	log.Println("Trip management server started: http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -131,6 +151,91 @@ func archiveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Error(w, "Trip not found", http.StatusNotFound)
+}
+
+func waybillsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	switch r.Method {
+	case http.MethodGet:
+		waybillsMu.Lock()
+		defer waybillsMu.Unlock()
+		json.NewEncoder(w).Encode(waybills)
+
+	case http.MethodPost:
+		var waybill Waybill
+		if err := json.NewDecoder(r.Body).Decode(&waybill); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		if waybill.WaybillNumber == "" {
+			http.Error(w, "Waybill number is required", http.StatusBadRequest)
+			return
+		}
+
+		if waybill.CreatedAt == "" {
+			waybill.CreatedAt = time.Now().Format(time.RFC3339)
+		}
+
+		if waybill.TripID != 0 {
+			tripsMu.Lock()
+			for _, trip := range trips {
+				if trip.ID == waybill.TripID {
+					waybill.TripCode = trip.TripCode
+					break
+				}
+			}
+			tripsMu.Unlock()
+		}
+
+		waybillsMu.Lock()
+		waybill.ID = waybillNextID
+		waybillNextID++
+		waybills = append(waybills, waybill)
+		waybillsMu.Unlock()
+
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(waybill)
+
+	case http.MethodPut:
+		var payload Waybill
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		if payload.ID == 0 {
+			http.Error(w, "Waybill id is required", http.StatusBadRequest)
+			return
+		}
+
+		waybillsMu.Lock()
+		defer waybillsMu.Unlock()
+
+		for i := range waybills {
+			if waybills[i].ID == payload.ID {
+				waybills[i].WaybillNumber = payload.WaybillNumber
+				waybills[i].TripID = payload.TripID
+				waybills[i].TripCode = payload.TripCode
+				waybills[i].Sender = payload.Sender
+				waybills[i].Receiver = payload.Receiver
+				waybills[i].Cargo = payload.Cargo
+				waybills[i].Weight = payload.Weight
+				waybills[i].Volume = payload.Volume
+				waybills[i].Pickup = payload.Pickup
+				waybills[i].Delivery = payload.Delivery
+				waybills[i].Status = payload.Status
+				json.NewEncoder(w).Encode(waybills[i])
+				return
+			}
+		}
+
+		http.Error(w, "Waybill not found", http.StatusNotFound)
+
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 func haversine(lat1, lon1, lat2, lon2 float64) float64 {
