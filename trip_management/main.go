@@ -33,6 +33,8 @@ type TripWithCoords struct {
 	DestLat    coord   `json:"destLat,omitempty"`
 	DestLng    coord   `json:"destLng,omitempty"`
 	DistanceKM float64 `json:"distanceKM,omitempty"`
+	Archived   bool    `json:"archived,omitempty"`
+	ArchivedAt string  `json:"archivedAt,omitempty"`
 }
 
 var (
@@ -44,6 +46,7 @@ var (
 func main() {
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 	http.HandleFunc("/api/trips", tripsHandler)
+	http.HandleFunc("/api/trips/archive", archiveHandler)
 
 	log.Println("Trip management server started: http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -91,6 +94,43 @@ func tripsHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+func archiveHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodPut {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var payload struct {
+		ID       int64 `json:"id"`
+		Archived bool  `json:"archived"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	tripsMu.Lock()
+	defer tripsMu.Unlock()
+
+	for i := range trips {
+		if trips[i].ID == payload.ID {
+			trips[i].Archived = payload.Archived
+			if payload.Archived {
+				trips[i].ArchivedAt = time.Now().Format(time.RFC3339)
+			} else {
+				trips[i].ArchivedAt = ""
+			}
+			json.NewEncoder(w).Encode(trips[i])
+			return
+		}
+	}
+
+	http.Error(w, "Trip not found", http.StatusNotFound)
 }
 
 func haversine(lat1, lon1, lat2, lon2 float64) float64 {

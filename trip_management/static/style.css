@@ -49,6 +49,18 @@ textarea {
     resize: vertical;
 }
 
+fieldset.coords {
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    padding: 16px;
+    background: #f8fafc;
+}
+
+fieldset.coords legend {
+    font-weight: 700;
+    color: #1d4ed8;
+}
+
 button {
     width: fit-content;
     padding: 12px 22px;
@@ -105,4 +117,31 @@ button:hover {
 .trip-card p {
     margin: 0 0 8px;
     color: #475569;
+}
+
+.trip-card.archived {
+    background: #f8fafc;
+    border-color: #c7d2fe;
+}
+
+.archive-button {
+    margin-top: 12px;
+    padding: 10px 18px;
+    background: #2563eb;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.archive-button:hover {
+    background: #1d4ed8;
+}
+
+.archived-label {
+    margin-top: 10px;
+    font-size: 0.95rem;
+    color: #334155;
+    font-style: italic;
 }
