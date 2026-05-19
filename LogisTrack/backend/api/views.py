@@ -134,8 +134,8 @@ class RegisterView(APIView):
     "email": user.email,
     "notify_email": True,
     "notify_push": False,
-    "subject": "LogisTrack'a Hoş Geldiniz!",
-    "body": f"Merhaba {user.full_name}, hesabınız başarıyla oluşturuldu."
+    "subject": "LogisTrack  Smart Logistics & Fleet Management",
+    "body": f"Hello {user.full_name}, your account created."
 })
 
         refresh = RefreshToken.for_user(user)
