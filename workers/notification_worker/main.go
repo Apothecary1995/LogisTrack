@@ -2,14 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"net/smtp"
 	"os"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// NotificationMessage struct
 type NotificationMessage struct {
 	Event       string `json:"event"`
 	EventType   string `json:"event_type"`
@@ -37,15 +38,40 @@ func connectRabbitMQ(url string) (*amqp.Connection, error) {
 	return conn, nil
 }
 
+func sendEmail(to, subject, body string) error {
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+	smtpUser := os.Getenv("SMTP_USER")
+	smtpPass := os.Getenv("SMTP_PASSWORD")
+
+	if smtpHost == "" || smtpUser == "" || smtpPass == "" {
+		log.Printf("[EMAIL] SMTP not configured, skipping email to %s", to)
+		return nil
+	}
+
+	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
+
+	msg := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", smtpUser, to, subject, body)
+
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, []string{to}, []byte(msg))
+	if err != nil {
+		return fmt.Errorf("email send error: %w", err)
+	}
+
+	log.Printf("[EMAIL] Sent to %s | Subject: %s", to, subject)
+	return nil
+}
+
 func handleNotification(msg NotificationMessage) error {
 	if msg.NotifyEmail && msg.Email != "" {
-		log.Printf("[EMAIL] To: %s | Subject: %s", msg.Email, msg.Subject)
-		// SMTP protcol need to be implemented asap
+		if err := sendEmail(msg.Email, msg.Subject, msg.Body); err != nil {
+			log.Printf("[EMAIL ERROR] %v", err)
+		}
 	}
 
 	if msg.NotifyPush && msg.UserID != 0 {
 		log.Printf("[PUSH] UserID: %d | Subject: %s", msg.UserID, msg.Subject)
-		// FCM cloud messaging asap
+		// FCM integration goes here
 	}
 
 	if !msg.NotifyEmail && !msg.NotifyPush {
