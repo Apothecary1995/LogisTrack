@@ -36,37 +36,49 @@ function ArchivePage() {
     }
   };
 
+  const onExportEmail = async () => {
+    try {
+      const response = await authRequest("/archive/export/", { method: "POST" });
+      alert(response.message || "Export request received. Check your email shortly.");
+    } catch (exportError) {
+      setError(exportError.message);
+    }
+  };
+
   return (
     <section className="page-section">
       <PageHeader
-        title="Sefer Arsivi"
-        subtitle="Filo yonetiminden girilen tum sefer kayitlari."
+        title="Trip archive"
+        subtitle="All record in filo."
         actions={
           <>
             <button type="button" className="ghost-button" onClick={loadTrips}>
-              Listeyi Yenile
+              Refresh list
             </button>
             <button type="button" className="danger-button" onClick={onExport}>
-              Excel Aktar
+              Download Excel 
+            </button>
+            <button type="button" className="ghost-button" onClick={onExportEmail}>
+              Email via e-mail
             </button>
           </>
         }
       />
 
       {error ? <p className="form-error">{error}</p> : null}
-      {isLoading ? <p>Kayitlar yukleniyor...</p> : null}
+      {isLoading ? <p>Loading records</p> : null}
 
       <TableWrap>
         <table>
           <thead>
             <tr>
-              <th>Tarih</th>
-              <th>Plaka</th>
-              <th>Rota</th>
-              <th>Musteri</th>
-              <th>Toplam KM</th>
-              <th>Tutar</th>
-              <th>Fatura</th>
+              <th>Date</th>
+              <th>Plate</th>
+              <th>Route</th>
+              <th>Costomer</th>
+              <th>Total KM</th>
+              <th>Amount</th>
+              <th>Receipt</th>
             </tr>
           </thead>
           <tbody>
@@ -90,7 +102,7 @@ function ArchivePage() {
             {!trips.length && !isLoading ? (
               <tr>
                 <td colSpan={7} className="empty-row">
-                  Arsivde kayit bulunamadi.
+                  Archive could not found 
                 </td>
               </tr>
             ) : null}

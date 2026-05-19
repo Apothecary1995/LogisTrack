@@ -444,6 +444,7 @@ class RouteDistanceUploadView(APIView):
 
 class ArchiveExportView(APIView):
     def get(self, request):
+        # Direct download
         trips = Trip.objects.filter(company=request.user.company).select_related("vehicle")
 
         workbook = Workbook()
@@ -451,55 +452,37 @@ class ArchiveExportView(APIView):
         worksheet.title = "Archive"
 
         headers = [
-            "Created At",
-            "Plate",
-            "Driver",
-            "Origin",
-            "Destination",
-            "Departure",
-            "Arrival",
-            "Duration",
-            "CCI KM",
-            "Extra KM",
-            "Total KM",
-            "Cargo Type",
-            "Quantity",
-            "Customer",
-            "Price",
-            "Total Amount",
-            "Waybill No",
-            "Invoice No",
-            "Invoice Date",
-            "Notes",
+            "Created At", "Plate", "Driver", "Origin", "Destination",
+            "Departure", "Arrival", "Duration", "CCI KM", "Extra KM",
+            "Total KM", "Cargo Type", "Quantity", "Customer", "Price",
+            "Total Amount", "Waybill No", "Invoice No", "Invoice Date", "Notes",
         ]
         worksheet.append(headers)
 
         for trip in trips:
             total_km = (trip.cci_km or Decimal("0")) + (trip.extra_km or Decimal("0"))
-            worksheet.append(
-                [
-                    trip.created_at.strftime("%Y-%m-%d %H:%M"),
-                    trip.plate_number,
-                    trip.vehicle.driver_name,
-                    trip.origin,
-                    trip.destination,
-                    trip.departure_time.strftime("%Y-%m-%d %H:%M") if trip.departure_time else "",
-                    trip.arrival_time.strftime("%Y-%m-%d %H:%M") if trip.arrival_time else "",
-                    trip.total_duration,
-                    float(trip.cci_km or 0),
-                    float(trip.extra_km or 0),
-                    float(total_km),
-                    trip.cargo_type,
-                    float(trip.quantity or 0),
-                    trip.customer,
-                    float(trip.price or 0),
-                    float(trip.total_amount or 0),
-                    trip.waybill_no,
-                    trip.invoice_no,
-                    trip.invoice_date.isoformat() if trip.invoice_date else "",
-                    trip.notes,
-                ]
-            )
+            worksheet.append([
+                trip.created_at.strftime("%Y-%m-%d %H:%M"),
+                trip.plate_number,
+                trip.vehicle.driver_name,
+                trip.origin,
+                trip.destination,
+                trip.departure_time.strftime("%Y-%m-%d %H:%M") if trip.departure_time else "",
+                trip.arrival_time.strftime("%Y-%m-%d %H:%M") if trip.arrival_time else "",
+                trip.total_duration,
+                float(trip.cci_km or 0),
+                float(trip.extra_km or 0),
+                float(total_km),
+                trip.cargo_type,
+                float(trip.quantity or 0),
+                trip.customer,
+                float(trip.price or 0),
+                float(trip.total_amount or 0),
+                trip.waybill_no,
+                trip.invoice_no,
+                trip.invoice_date.isoformat() if trip.invoice_date else "",
+                trip.notes,
+            ])
 
         response = HttpResponse(
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -508,6 +491,26 @@ class ArchiveExportView(APIView):
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         workbook.save(response)
         return response
+
+    def post(self, request):
+        # Email export via RabbitMQ
+        publish_notification({
+            "event": "export.request",
+            "event_type": "export",
+            "user_id": request.user.id,
+            "email": request.user.email,
+            "notify_email": True,
+            "notify_push": False,
+            "subject": "LogisTrack Fleet Archive Export",
+            "body": "Your fleet archive export is being processed.",
+            "company_id": request.user.company.id,
+            "requested_by": request.user.email,
+        })
+
+        return Response(
+            {"message": "Export request received. You will receive an email shortly."},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
 
 class FuelMergedView(APIView):
