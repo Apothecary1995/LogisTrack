@@ -69,7 +69,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-notification_worker:
+  notification_worker:
     build:
       context: ../workers/notification_worker
     container_name: logistrack-notification-worker
