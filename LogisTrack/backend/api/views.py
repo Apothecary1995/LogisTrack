@@ -492,25 +492,19 @@ class ArchiveExportView(APIView):
         workbook.save(response)
         return response
 
-    def post(self, request):
-        # Email export via RabbitMQ
-        publish_notification({
-            "event": "export.request",
-            "event_type": "export",
-            "user_id": request.user.id,
-            "email": request.user.email,
-            "notify_email": True,
-            "notify_push": False,
-            "subject": "LogisTrack Fleet Archive Export",
-            "body": "Your fleet archive export is being processed.",
-            "company_id": request.user.company.id,
-            "requested_by": request.user.email,
-        })
+   def post(self, request):
+    from .publisher import publish_export
+    publish_export({
+        "event": "export.request",
+        "company_id": request.user.company.id,
+        "requested_by": request.user.email,
+        "filters": {},
+    })
 
-        return Response(
-            {"message": "Export request received. You will receive an email shortly."},
-            status=status.HTTP_202_ACCEPTED,
-        )
+    return Response(
+        {"message": "Export request received. You will receive an email shortly."},
+        status=status.HTTP_202_ACCEPTED,
+    )
 
 
 class FuelMergedView(APIView):
