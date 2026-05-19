@@ -14,7 +14,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-
+from .publisher import publish_notification
 from .models import (
     DriverLeave,
     DriverProfile,
@@ -126,6 +126,17 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+
+        publish_notification({
+    "event": "user.registered",
+    "event_type": "registration",
+    "user_id": user.id,
+    "email": user.email,
+    "notify_email": True,
+    "notify_push": False,
+    "subject": "LogisTrack'a Hoş Geldiniz!",
+    "body": f"Merhaba {user.full_name}, hesabınız başarıyla oluşturuldu."
+})
 
         refresh = RefreshToken.for_user(user)
         return Response(
