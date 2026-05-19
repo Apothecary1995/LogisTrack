@@ -492,7 +492,7 @@ class ArchiveExportView(APIView):
         workbook.save(response)
         return response
 
-        def post(self, request):
+    def post(self, request):
         publish_export({
             "event": "export.request",
             "company_id": request.user.company.id,
