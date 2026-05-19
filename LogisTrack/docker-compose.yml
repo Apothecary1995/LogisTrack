@@ -72,3 +72,21 @@ services:
 volumes:
   rabbitmq_data:
   export_files:
+
+
+
+
+
+
+
+
+notification_worker:
+    build:
+      context: ../workers/notification_worker
+    container_name: logistrack-notification-worker
+    environment:
+      RABBITMQ_URL: amqp://logistrack:logistrack_pass@rabbitmq:5672/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped

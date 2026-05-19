@@ -25,3 +25,14 @@ jobs:
           cd workers/export_worker
           go mod tidy
           go test ./... -v
+
+
+          
+      - name: Run notification worker tests
+        run: |
+          cd workers/notification_worker
+          go mod tidy
+          go test ./... -v
+
+
+
