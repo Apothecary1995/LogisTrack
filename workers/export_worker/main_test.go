@@ -42,9 +42,19 @@ func TestGenerateExcel_CreatesFile(t *testing.T) {
 		CompanyID: 99,
 	}
 
-	err := generateExcel(msg)
+	testDir := "./test_exports"
+	defer os.RemoveAll(testDir)
+
+	os.Setenv("EXPORT_DIR", testDir)
+	defer os.Unsetenv("EXPORT_DIR")
+
+	filename, err := generateExcel(msg)
 
 	if err != nil {
-		t.Fatalf("Error creating excel: %v", err)
+		t.Fatalf("Excel creation error: %v", err)
+	}
+
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		t.Errorf("file can not created: %s", filename)
 	}
 }

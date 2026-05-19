@@ -1,12 +1,14 @@
 package main
 
-//we will send message to queue from this worker
-
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/smtp"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -36,7 +38,7 @@ type ExportMessage struct {
 	Filters     map[string]string `json:"filters"`
 }
 
-func generateExcel(msg ExportMessage) error {
+func generateExcel(msg ExportMessage) (string, error) {
 	f := excelize.NewFile()
 	sheet := "Fleet Archive"
 	f.NewSheet(sheet)
@@ -66,7 +68,60 @@ func generateExcel(msg ExportMessage) error {
 		time.Now().Format("20060102_150405"),
 	)
 
-	return f.SaveAs(filename)
+	return filename, f.SaveAs(filename)
+}
+
+func sendExcelByEmail(filename string, msg ExportMessage) error {
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+	smtpUser := os.Getenv("SMTP_USER")
+	smtpPass := os.Getenv("SMTP_PASSWORD")
+
+	if smtpHost == "" || smtpUser == "" || smtpPass == "" {
+		log.Printf("[EMAIL] SMTP not configured, skipping email")
+		return nil
+	}
+
+	fileBytes, err := os.ReadFile(filename)
+	if err != nil {
+		return fmt.Errorf("file read error: %w", err)
+	}
+
+	boundary := "LogisTrackBoundary"
+
+	body := &strings.Builder{}
+	body.WriteString(fmt.Sprintf("From: %s\r\n", smtpUser))
+	body.WriteString(fmt.Sprintf("To: %s\r\n", msg.RequestedBy))
+	body.WriteString("Subject: LogisTrack Fleet Archive Export\r\n")
+	body.WriteString("MIME-Version: 1.0\r\n")
+	body.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=%s\r\n\r\n", boundary))
+
+	body.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+	body.WriteString("Content-Type: text/plain; charset=utf-8\r\n\r\n")
+	body.WriteString("Please find your fleet archive export attached.\r\n\r\n")
+
+	body.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+	body.WriteString("Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n")
+	body.WriteString("Content-Transfer-Encoding: base64\r\n")
+	body.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=\"%s\"\r\n\r\n",
+		filepath.Base(filename)))
+	body.WriteString(base64.StdEncoding.EncodeToString(fileBytes))
+	body.WriteString(fmt.Sprintf("\r\n--%s--\r\n", boundary))
+
+	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
+	err = smtp.SendMail(
+		smtpHost+":"+smtpPort,
+		auth,
+		smtpUser,
+		[]string{msg.RequestedBy},
+		[]byte(body.String()),
+	)
+	if err != nil {
+		return fmt.Errorf("email send error: %w", err)
+	}
+
+	log.Printf("[EMAIL] Excel sent to %s", msg.RequestedBy)
+	return nil
 }
 
 func main() {
@@ -138,7 +193,7 @@ func main() {
 		log.Fatal("listening error: ", err)
 	}
 
-	log.Println("expecting message.....")
+	log.Println("expecting message")
 
 	for msg := range msgs {
 		log.Printf("message arrived: %s", msg.Body)
@@ -150,13 +205,18 @@ func main() {
 			continue
 		}
 
-		if err := generateExcel(exportMsg); err != nil {
+		filename, err := generateExcel(exportMsg)
+		if err != nil {
 			log.Printf("excel error: %v", err)
 			msg.Nack(false, false)
 			continue
 		}
 
-		log.Printf("excel created for company %d", exportMsg.CompanyID)
+		if err := sendExcelByEmail(filename, exportMsg); err != nil {
+			log.Printf("email error: %v", err)
+		}
+
+		log.Printf("excel created and sent for company %d", exportMsg.CompanyID)
 		msg.Ack(false)
 	}
 }
