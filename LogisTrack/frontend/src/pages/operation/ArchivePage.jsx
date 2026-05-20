@@ -59,7 +59,7 @@ function ArchivePage() {
               Download Excel 
             </button>
             <button type="button" className="ghost-button" onClick={onExportEmail}>
-              Email via e-mail
+              Export via e-mail
             </button>
           </>
         }
