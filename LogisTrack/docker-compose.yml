@@ -17,6 +17,18 @@ services:
       retries: 5
     restart: unless-stopped
 
+  couchdb:
+    image: couchdb:3
+    container_name: logistrack-couchdb
+    environment:
+      COUCHDB_USER: logistrack
+      COUCHDB_PASSWORD: logistrack_pass
+    ports:
+      - "5984:5984"
+    volumes:
+      - couchdb_data:/opt/couchdb/data
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -79,10 +91,21 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  couchdb_worker:
+    build:
+      context: ../workers/couchdb_worker
+    container_name: logistrack-couchdb-worker
+    environment:
+      RABBITMQ_URL: amqp://logistrack:logistrack_pass@rabbitmq:5672/
+      COUCHDB_URL: http://logistrack:logistrack_pass@couchdb:5984/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      couchdb:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   rabbitmq_data:
   export_files:
-
-
-
-
+  couchdb_data:

@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .publisher import publish_notification, publish_export
+from .publisher import publish_notification, publish_export, publish_trip, publish_vehicle
 from .models import (
     DriverLeave,
     DriverProfile,
@@ -234,10 +235,19 @@ class VehicleViewSet(CompanyScopedQuerysetMixin, viewsets.ModelViewSet):
             defaults={"is_active": True},
         )
 
-    def perform_create(self, serializer):
+   def perform_create(self, serializer):
         vehicle = serializer.save(company=self.request.user.company)
         self._ensure_driver_profile(vehicle)
-
+        try:
+            publish_vehicle({
+                "event": "vehicle.created",
+                "company_id": vehicle.company_id,
+                "vehicle_id": vehicle.id,
+                "plate_number": vehicle.plate_number,
+                "driver_name": vehicle.driver_name,
+            })
+        except Exception as e:
+            print(f"[RabbitMQ] Vehicle publish error: {e}")
     def perform_update(self, serializer):
         vehicle = serializer.save()
         self._ensure_driver_profile(vehicle)
@@ -269,13 +279,29 @@ class TripViewSet(CompanyScopedQuerysetMixin, viewsets.ModelViewSet):
         queryset = super().get_queryset().select_related("vehicle")
         start_date = self.request.query_params.get("start_date")
         end_date = self.request.query_params.get("end_date")
-
         if start_date:
             queryset = queryset.filter(created_at__date__gte=start_date)
         if end_date:
             queryset = queryset.filter(created_at__date__lte=end_date)
-
         return queryset
+
+    def perform_create(self, serializer):
+        trip = serializer.save()
+        try:
+            publish_trip({
+                "event": "trip.created",
+                "company_id": trip.company_id,
+                "trip_id": trip.id,
+                "plate_number": trip.plate_number,
+                "origin": trip.origin,
+                "destination": trip.destination,
+                "cci_km": float(trip.cci_km or 0),
+                "extra_km": float(trip.extra_km or 0),
+                "total_amount": float(trip.total_amount or 0),
+                "created_at": trip.created_at.isoformat(),
+            })
+        except Exception as e:
+            print(f"[RabbitMQ] Trip publish error: {e}")
 
 
 class ServiceRepairViewSet(CompanyScopedQuerysetMixin, viewsets.ModelViewSet):
