@@ -505,20 +505,6 @@ class ArchiveExportView(APIView):
             status=status.HTTP_202_ACCEPTED,
         )
 
-   def post(self, request):
-    from .publisher import publish_export
-    publish_export({
-        "event": "export.request",
-        "company_id": request.user.company.id,
-        "requested_by": request.user.email,
-        "filters": {},
-    })
-
-    return Response(
-        {"message": "Export request received. You will receive an email shortly."},
-        status=status.HTTP_202_ACCEPTED,
-    )
-
 
 class FuelMergedView(APIView):
     def get(self, request):
