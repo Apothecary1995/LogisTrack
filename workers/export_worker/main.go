@@ -193,7 +193,7 @@ func main() {
 		log.Fatal("listening error: ", err)
 	}
 
-	log.Println("expecting message")
+	log.Println("expecting message.....")
 
 	for msg := range msgs {
 		log.Printf("message arrived: %s", msg.Body)
