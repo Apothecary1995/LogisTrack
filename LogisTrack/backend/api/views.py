@@ -235,7 +235,7 @@ class VehicleViewSet(CompanyScopedQuerysetMixin, viewsets.ModelViewSet):
             defaults={"is_active": True},
         )
 
-   def perform_create(self, serializer):
+    def perform_create(self, serializer):
         vehicle = serializer.save(company=self.request.user.company)
         self._ensure_driver_profile(vehicle)
         try:
