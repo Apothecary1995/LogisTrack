@@ -65,7 +65,8 @@ def publish_export(message: dict):
     except Exception as e:
         print(f"[RabbitMQ] Publish error: {e}")
 
-        def publish_trip(trip_data: dict):
+
+def publish_trip(trip_data: dict):
     url = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
 
     try:
