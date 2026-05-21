@@ -24,9 +24,11 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "api",
+    'django_prometheus',
 ]
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     "corsheaders.middleware.CorsMiddleware", # En üstte kalmalı
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware", # Statik dosyalar için
@@ -36,6 +38,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = "config.urls"

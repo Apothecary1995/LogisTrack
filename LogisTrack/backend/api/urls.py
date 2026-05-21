@@ -56,4 +56,5 @@ urlpatterns = [
     path("employees/insights/", EmployeeInsightView.as_view(), name="employee-insights"),
     path("erp/settings/", ERPSettingView.as_view(), name="erp-settings"),
     path("", include(router.urls)),
+    path('', include('django_prometheus.urls')),
 ]
