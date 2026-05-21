@@ -22,7 +22,13 @@ import { startSync } from "./lib/pouchdb";
 
 function App() {
   useEffect(() => {
-    startSync();
+    try {
+      console.log('[App] Starting PouchDB sync...');
+      startSync();
+      console.log('[App] PouchDB sync started');
+    } catch (err) {
+      console.error('[App] PouchDB sync error:', err);
+    }
   }, []);
 
   return (
