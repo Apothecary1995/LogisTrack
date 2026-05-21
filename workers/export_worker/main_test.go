@@ -5,15 +5,6 @@ import (
 	"testing"
 )
 
-func TestConnectRabbitMQ_InvalidURL(t *testing.T) {
-	_, err := connectRabbitMQ("amqp://invalid:5672/")
-
-	if err == nil {
-		t.Error("geçersiz URL için hata bekliyordu")
-	}
-}
-
-// geturl test added
 func TestGetURL_DefaultURL(t *testing.T) {
 	os.Unsetenv("RABBITMQ_URL")
 
@@ -21,7 +12,7 @@ func TestGetURL_DefaultURL(t *testing.T) {
 
 	expected := "amqp://guest:guest@localhost:5672/"
 	if url != expected {
-		t.Errorf("beklenen %s, gelen %s", expected, url)
+		t.Errorf("expected %s, arrived %s", expected, url)
 	}
 }
 
@@ -33,6 +24,37 @@ func TestGetURL_CustomURL(t *testing.T) {
 
 	expected := "amqp://user:pass@rabbitmq:5672/"
 	if url != expected {
-		t.Errorf("beklenen %s, gelen %s", expected, url)
+		t.Errorf("expected %s, arrived %s", expected, url)
+	}
+}
+
+func TestConnectRabbitMQ_InvalidURL(t *testing.T) {
+	_, err := connectRabbitMQ("amqp://invalid:5672/")
+
+	if err == nil {
+		t.Error("invalid url error ")
+	}
+}
+
+func TestGenerateExcel_CreatesFile(t *testing.T) {
+	msg := ExportMessage{
+		Event:     "export.request",
+		CompanyID: 99,
+	}
+
+	testDir := "./test_exports"
+	defer os.RemoveAll(testDir)
+
+	os.Setenv("EXPORT_DIR", testDir)
+	defer os.Unsetenv("EXPORT_DIR")
+
+	filename, err := generateExcel(msg)
+
+	if err != nil {
+		t.Fatalf("Excel creation error: %v", err)
+	}
+
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		t.Errorf("file can not created: %s", filename)
 	}
 }
