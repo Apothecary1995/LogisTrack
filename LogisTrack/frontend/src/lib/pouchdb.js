@@ -1,20 +1,26 @@
-import PouchDB from 'pouchdb';
-import PouchDBFind from 'pouchdb-find';
 
-PouchDB.plugin(PouchDBFind);
+const PouchDBLib = window.PouchDB;
 
-export const localDB = new PouchDB('logistrack');
+if (PouchDBLib) {
+  PouchDBLib.plugin(window.PouchDBFind || {});
+}
 
-const remoteDB = new PouchDB('https://couchdb.ahmetcengiz.dev/trips', {
+export const localDB = PouchDBLib ? new PouchDBLib('logistrack') : null;
+
+const remoteDB = PouchDBLib ? new PouchDBLib('https://couchdb.ahmetcengiz.dev/trips', {
   auth: {
     username: 'logistrack',
     password: 'logistrack_pass'
   }
-});
+}) : null;
 
 let syncHandler = null;
 
 export function startSync() {
+  if (!localDB || !remoteDB) {
+    console.error('[PouchDB] Not loaded!');
+    return;
+  }
   if (syncHandler) return;
 
   console.log('[PouchDB] Starting sync...');
@@ -28,7 +34,6 @@ export function startSync() {
   .on('active', () => console.log('[Sync] Active'))
   .on('error', (err) => console.error('[Sync] Error:', err));
 
-  // Global expose for debugging
   window.__pouchDB = localDB;
   window.__syncHandler = syncHandler;
 
