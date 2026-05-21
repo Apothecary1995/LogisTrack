@@ -1,4 +1,4 @@
-const CACHE_NAME = 'logistrack-v1';
+const CACHE_NAME = 'logistrack-v2';
 
 const STATIC_ASSETS = ['/', '/index.html', '/manifest.json'];
 
