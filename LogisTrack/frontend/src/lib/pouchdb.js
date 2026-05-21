@@ -17,14 +17,20 @@ let syncHandler = null;
 export function startSync() {
   if (syncHandler) return;
 
+  console.log('[PouchDB] Starting sync...');
+
   syncHandler = localDB.sync(remoteDB, {
     live: true,
     retry: true
   })
-  .on('change', () => console.log('[Sync] Changed'))
+  .on('change', (info) => console.log('[Sync] Changed:', info))
   .on('paused', () => console.log('[Sync] Paused'))
   .on('active', () => console.log('[Sync] Active'))
   .on('error', (err) => console.error('[Sync] Error:', err));
+
+  // Global expose for debugging
+  window.__pouchDB = localDB;
+  window.__syncHandler = syncHandler;
 
   return syncHandler;
 }
