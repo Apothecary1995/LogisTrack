@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -16,22 +17,26 @@ import ErpPage from "./pages/system/ErpPage";
 import FuelPage from "./pages/technicfinance/FuelPage";
 import PayrollPage from "./pages/technicfinance/PayrollPage";
 import ServiceRepairPage from "./pages/technicfinance/ServiceRepairPage";
-import { OfflineBanner } from './components/OfflineBanner';
+import { OfflineBanner } from "./components/OfflineBanner";
+import { startSync } from "./lib/pouchdb";
 
 function App() {
+  useEffect(() => {
+    startSync();
+  }, []);
+
   return (
     <>
-      
-      <OfflineBanner /> 
+      <OfflineBanner />
 
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        
+
         <Route
-          element = {
+          element={
             <ProtectedRoute>
               <MainLayout />
             </ProtectedRoute>
