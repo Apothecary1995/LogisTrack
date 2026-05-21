@@ -282,7 +282,8 @@ export function AuthProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, [accessToken, refreshToken, authRequest, logout]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const value = useMemo(
     () => ({
