@@ -61,6 +61,9 @@ function ArchivePage() {
             <button type="button" className="ghost-button" onClick={onExportEmail}>
               Export via e-mail
             </button>
+            <button type="button" className="ghost-button" onClick={onExportPDF}>
+            Send as PDF via e-mail
+</button>
           </>
         }
       />

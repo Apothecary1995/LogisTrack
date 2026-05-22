@@ -209,6 +209,19 @@ class ChangePasswordView(APIView):
                 "refresh": str(refresh),
             }
         )
+class PDFExportView(APIView):
+    def post(self, request):
+        publish_export({
+            "event": "export.request",
+            "format": "pdf",
+            "company_id": request.user.company.id,
+            "requested_by": request.user.email,
+            "filters": {},
+        })
+        return Response(
+            {"message": "PDF export request received. You will receive an email shortly."},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
 
 class UserPreferenceView(APIView):
