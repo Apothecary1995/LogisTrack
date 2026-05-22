@@ -33,11 +33,12 @@ func connectRabbitMQ(url string) (*amqp.Connection, error) {
 }
 
 type ExportMessage struct {
-	Event       string            `json:"event"`
-	Format      string            `json:"format"`
-	CompanyID   int               `json:"company_id"`
-	RequestedBy string            `json:"requested_by"`
-	Filters     map[string]string `json:"filters"`
+	Event       string                   `json:"event"`
+	Format      string                   `json:"format"`
+	CompanyID   int                      `json:"company_id"`
+	RequestedBy string                   `json:"requested_by"`
+	Filters     map[string]string        `json:"filters"`
+	Trips       []map[string]interface{} `json:"trips"`
 }
 
 func generateExcel(msg ExportMessage) (string, error) {
@@ -56,6 +57,21 @@ func generateExcel(msg ExportMessage) (string, error) {
 	for i, h := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheet, cell, h)
+	}
+
+	for rowIdx, trip := range msg.Trips {
+		row := rowIdx + 2
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), trip["created_at"])
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), trip["plate_number"])
+		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), trip["driver"])
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), trip["origin"])
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), trip["destination"])
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), trip["cci_km"])
+		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), trip["extra_km"])
+		f.SetCellValue(sheet, fmt.Sprintf("H%d", row), trip["total_km"])
+		f.SetCellValue(sheet, fmt.Sprintf("I%d", row), trip["customer"])
+		f.SetCellValue(sheet, fmt.Sprintf("J%d", row), trip["price"])
+		f.SetCellValue(sheet, fmt.Sprintf("K%d", row), trip["total_amount"])
 	}
 
 	exportDir := os.Getenv("EXPORT_DIR")

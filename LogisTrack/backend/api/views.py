@@ -14,7 +14,6 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .publisher import publish_notification, publish_export
 from .publisher import publish_notification, publish_export, publish_trip, publish_vehicle
 from .models import (
     DriverLeave,
@@ -129,15 +128,15 @@ class RegisterView(APIView):
         user = serializer.save()
 
         publish_notification({
-    "event": "user.registered",
-    "event_type": "registration",
-    "user_id": user.id,
-    "email": user.email,
-    "notify_email": True,
-    "notify_push": False,
-    "subject": "LogisTrack  Smart Logistics & Fleet Management",
-    "body": f"Hello {user.full_name}, your account created."
-})
+            "event": "user.registered",
+            "event_type": "registration",
+            "user_id": user.id,
+            "email": user.email,
+            "notify_email": True,
+            "notify_push": False,
+            "subject": "LogisTrack Smart Logistics & Fleet Management",
+            "body": f"Hello {user.full_name}, your account created.",
+        })
 
         refresh = RefreshToken.for_user(user)
         return Response(
@@ -174,7 +173,6 @@ class ForgotPasswordView(APIView):
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        # Placeholder: Email integration is intentionally not wired in this MVP.
         return Response(
             {
                 "message": "If the email exists, password reset instructions have been queued.",
@@ -208,19 +206,6 @@ class ChangePasswordView(APIView):
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
             }
-        )
-class PDFExportView(APIView):
-    def post(self, request):
-        publish_export({
-            "event": "export.request",
-            "format": "pdf",
-            "company_id": request.user.company.id,
-            "requested_by": request.user.email,
-            "filters": {},
-        })
-        return Response(
-            {"message": "PDF export request received. You will receive an email shortly."},
-            status=status.HTTP_202_ACCEPTED,
         )
 
 
@@ -261,6 +246,7 @@ class VehicleViewSet(CompanyScopedQuerysetMixin, viewsets.ModelViewSet):
             })
         except Exception as e:
             print(f"[RabbitMQ] Vehicle publish error: {e}")
+
     def perform_update(self, serializer):
         vehicle = serializer.save()
         self._ensure_driver_profile(vehicle)
@@ -483,7 +469,6 @@ class RouteDistanceUploadView(APIView):
 
 class ArchiveExportView(APIView):
     def get(self, request):
-        # Direct download
         trips = Trip.objects.filter(company=request.user.company).select_related("vehicle")
 
         workbook = Workbook()
@@ -532,15 +517,70 @@ class ArchiveExportView(APIView):
         return response
 
     def post(self, request):
+        trips = Trip.objects.filter(company=request.user.company).select_related("vehicle")
+
+        trip_data = []
+        for trip in trips:
+            trip_data.append({
+                "created_at": trip.created_at.strftime("%Y-%m-%d %H:%M"),
+                "plate_number": trip.plate_number,
+                "driver": trip.vehicle.driver_name if trip.vehicle else "",
+                "origin": trip.origin,
+                "destination": trip.destination,
+                "cci_km": float(trip.cci_km or 0),
+                "extra_km": float(trip.extra_km or 0),
+                "total_km": float((trip.cci_km or 0) + (trip.extra_km or 0)),
+                "customer": trip.customer or "",
+                "price": float(trip.price or 0),
+                "total_amount": float(trip.total_amount or 0),
+            })
+
         publish_export({
             "event": "export.request",
+            "format": "excel",
             "company_id": request.user.company.id,
             "requested_by": request.user.email,
             "filters": {},
+            "trips": trip_data,
         })
 
         return Response(
             {"message": "Export request received. You will receive an email shortly."},
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+
+class PDFExportView(APIView):
+    def post(self, request):
+        trips = Trip.objects.filter(company=request.user.company).select_related("vehicle")
+
+        trip_data = []
+        for trip in trips:
+            trip_data.append({
+                "created_at": trip.created_at.strftime("%Y-%m-%d %H:%M"),
+                "plate_number": trip.plate_number,
+                "driver": trip.vehicle.driver_name if trip.vehicle else "",
+                "origin": trip.origin,
+                "destination": trip.destination,
+                "cci_km": float(trip.cci_km or 0),
+                "extra_km": float(trip.extra_km or 0),
+                "total_km": float((trip.cci_km or 0) + (trip.extra_km or 0)),
+                "customer": trip.customer or "",
+                "price": float(trip.price or 0),
+                "total_amount": float(trip.total_amount or 0),
+            })
+
+        publish_export({
+            "event": "export.request",
+            "format": "pdf",
+            "company_id": request.user.company.id,
+            "requested_by": request.user.email,
+            "filters": {},
+            "trips": trip_data,
+        })
+
+        return Response(
+            {"message": "PDF export request received. You will receive an email shortly."},
             status=status.HTTP_202_ACCEPTED,
         )
 
