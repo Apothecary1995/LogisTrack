@@ -45,6 +45,14 @@ function ArchivePage() {
     }
   };
 
+   const onExportPDF = async () => {
+    try {
+      const response = await authRequest("/archive/export/pdf/", { method: "POST" });
+      alert(response.message || "PDF export request received. Check your email shortly.");
+    } catch (exportError) {
+      setError(exportError.message);
+    }
+  };
   return (
     <section className="page-section">
       <PageHeader
