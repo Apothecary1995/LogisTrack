@@ -26,6 +26,8 @@ from .views import (
     UserCountView,
     UserPreferenceView,
     VehicleViewSet,
+    ArchiveExportView,
+    PDFExportView,
 )
 
 router = DefaultRouter()
