@@ -16,6 +16,19 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+
+  rate_limiter:
+    build:
+      context: ../workers/rate_limiter
+    container_name: logistrack-rate-limiter
+    environment:
+      BACKEND_URL: http://backend:8000
+      LISTEN_PORT: "8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    restart: unless-stopped
   
   prometheus:
     image: prom/prometheus:latest
