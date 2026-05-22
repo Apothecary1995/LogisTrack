@@ -107,8 +107,8 @@ func generatePDF(msg ExportMessage) (string, error) {
 	pdf.SetFillColor(31, 78, 121)
 	pdf.SetTextColor(255, 255, 255)
 
-	headers := []string{"Date", "Plate", "Driver", "Origin", "Destination", "KM", "Amount"}
-	widths := []float64{28, 25, 40, 35, 35, 20, 25}
+	headers := []string{"Date", "Plate", "Driver", "Origin", "Destination", "CCI KM", "Extra KM", "Total KM", "Customer", "Amount"}
+	widths := []float64{25, 22, 35, 30, 30, 18, 18, 18, 30, 22}
 
 	for i, header := range headers {
 		pdf.CellFormat(widths[i], 8, header, "1", 0, "C", true, 0, "")
@@ -117,8 +117,31 @@ func generatePDF(msg ExportMessage) (string, error) {
 
 	pdf.SetFont("Arial", "", 8)
 	pdf.SetTextColor(0, 0, 0)
-	pdf.SetFillColor(240, 240, 240)
-	pdf.CellFormat(208, 7, "Export processed - data from fleet archive", "1", 0, "C", true, 0, "")
+
+	for i, trip := range msg.Trips {
+		if i%2 == 0 {
+			pdf.SetFillColor(240, 240, 240)
+		} else {
+			pdf.SetFillColor(255, 255, 255)
+		}
+
+		pdf.CellFormat(widths[0], 7, fmt.Sprintf("%v", trip["created_at"]), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(widths[1], 7, fmt.Sprintf("%v", trip["plate_number"]), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(widths[2], 7, fmt.Sprintf("%v", trip["driver"]), "1", 0, "L", true, 0, "")
+		pdf.CellFormat(widths[3], 7, fmt.Sprintf("%v", trip["origin"]), "1", 0, "L", true, 0, "")
+		pdf.CellFormat(widths[4], 7, fmt.Sprintf("%v", trip["destination"]), "1", 0, "L", true, 0, "")
+		pdf.CellFormat(widths[5], 7, fmt.Sprintf("%v", trip["cci_km"]), "1", 0, "R", true, 0, "")
+		pdf.CellFormat(widths[6], 7, fmt.Sprintf("%v", trip["extra_km"]), "1", 0, "R", true, 0, "")
+		pdf.CellFormat(widths[7], 7, fmt.Sprintf("%v", trip["total_km"]), "1", 0, "R", true, 0, "")
+		pdf.CellFormat(widths[8], 7, fmt.Sprintf("%v", trip["customer"]), "1", 0, "L", true, 0, "")
+		pdf.CellFormat(widths[9], 7, fmt.Sprintf("%v", trip["total_amount"]), "1", 0, "R", true, 0, "")
+		pdf.Ln(-1)
+	}
+
+	pdf.SetFont("Arial", "B", 9)
+	pdf.SetFillColor(31, 78, 121)
+	pdf.SetTextColor(255, 255, 255)
+	pdf.CellFormat(248, 8, fmt.Sprintf("Total Records: %d", len(msg.Trips)), "1", 0, "R", true, 0, "")
 	pdf.Ln(-1)
 
 	exportDir := os.Getenv("EXPORT_DIR")
