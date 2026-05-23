@@ -22,4 +22,29 @@ function FuelPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  //I will add remain part later on.
+   //added new.
+  const loadData = async () => {
+    setError("");
+    try {
+      const [vehicleResponse, mergedResponse] = await Promise.all([
+        authRequest("/vehicles/"),
+        authRequest("/fuel-entries/merged/"),
+      ]);
+      setVehicles(vehicleResponse || []);
+      setMergedRows(mergedResponse || []);
+      if (!form.vehicle && vehicleResponse?.length) {
+        setForm((prev) => ({ ...prev, vehicle: String(vehicleResponse[0].id) }));
+      }
+    } catch (loadError) {
+      setError(loadError.message);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+ const onChange = (event) => {
+    setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
+  };
