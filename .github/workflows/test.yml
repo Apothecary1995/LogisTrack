@@ -48,3 +48,9 @@ jobs:
           cd workers/pdf_converter
           go mod tidy
           go test ./... -v
+
+      - name: Run websocket server tests
+        run: |
+          cd workers/websocket_server
+          go mod tidy
+          go test ./... -v

@@ -143,6 +143,20 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  websocket_server:
+    build:
+      context: ../workers/websocket_server
+    container_name: logistrack-websocket
+    environment:
+      RABBITMQ_URL: amqp://logistrack:logistrack_pass@rabbitmq:5672/
+      WS_PORT: "8090"
+    ports:
+      - "8090:8090"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   rabbitmq_data:
   export_files:
