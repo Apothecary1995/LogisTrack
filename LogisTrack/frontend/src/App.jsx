@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -19,8 +19,33 @@ import PayrollPage from "./pages/technicfinance/PayrollPage";
 import ServiceRepairPage from "./pages/technicfinance/ServiceRepairPage";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { startSync } from "./lib/pouchdb";
+import { useWebSocket } from "./hooks/useWebSocket";
+import { ToastNotification, useToasts } from "./components/ToastNotification";
 
 function App() {
+  const { toasts, addToast, removeToast } = useToasts();
+
+  const handleEvent = useCallback((event) => {
+    switch (event.type) {
+      case "trip.created":
+        addToast("Yeni Sefer", "Sefer arsive eklendi", "#3b82f6");
+        break;
+      case "vehicle.created":
+        addToast("Yeni Arac", "Filo listesi guncellendi", "#10b981");
+        break;
+      case "export.request":
+        addToast("Export Hazirlaniyor", "Dosya email ile gonderilecek", "#f59e0b");
+        break;
+      case "notification.send":
+        addToast("Bildirim", "Kullaniciya email gonderildi", "#8b5cf6");
+        break;
+      default:
+        break;
+    }
+  }, [addToast]);
+
+  useWebSocket(handleEvent);
+
   useEffect(() => {
     try {
       console.log('[App] Starting PouchDB sync...');
@@ -34,6 +59,7 @@ function App() {
   return (
     <>
       <OfflineBanner />
+      <ToastNotification toasts={toasts} onRemove={removeToast} />
 
       <Routes>
         <Route path="/" element={<HomePage />} />
