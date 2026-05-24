@@ -1,9 +1,5 @@
 const PouchDB = window.PouchDB || null;
 
-if (PouchDB && window.PouchDBFind) {
- 
-  PouchDB.plugin(window.PouchDBFind);
-}
 
 
 export const localDB = PouchDB ? new PouchDB('logistrack') : null;
