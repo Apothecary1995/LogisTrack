@@ -157,6 +157,20 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  health_checker:
+    build:
+      context: ../workers/health_checker
+    container_name: logistrack-health-checker
+    env_file:
+      - .env
+    environment:
+      CHECK_INTERVAL: 30s
+      ALERT_EMAIL: ahmet.cengiz19951995@gmail.com
+    depends_on:
+      - backend
+      - rabbitmq
+    restart: unless-stopped
+
 volumes:
   rabbitmq_data:
   export_files:

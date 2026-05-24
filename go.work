@@ -3,6 +3,7 @@ go 1.26.2
 use (
 	./workers/couchdb_worker
 	./workers/export_worker
+	./workers/health_checker
 	./workers/notification_worker
 	./workers/pdf_converter
 	./workers/rate_limiter

@@ -54,3 +54,9 @@ jobs:
           cd workers/websocket_server
           go mod tidy
           go test ./... -v
+
+      - name: Run health checker tests
+        run: |
+          cd workers/health_checker
+          go mod tidy
+          go test ./... -v
