@@ -7,21 +7,18 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      devOptions: { enabled: true },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2,json}"],
         runtimeCaching: [
           {
-            // cors api
             urlPattern: ({ url }) =>
               url.origin === "https://api.ahmetcengiz.dev",
-            handler: "NetworkFirst",
+            handler: "CacheFirst",
             options: {
               cacheName: "api-cache",
-              networkTimeoutSeconds: 8,
               expiration: {
                 maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24, // 24 saat
+                maxAgeSeconds: 60 * 60 * 24,
               },
               cacheableResponse: { statuses: [0, 200] },
             },
@@ -57,7 +54,6 @@ export default defineConfig({
             purpose: "any",
           },
           {
-            
             src: "/favicon.png",
             sizes: "512x512",
             type: "image/png",
