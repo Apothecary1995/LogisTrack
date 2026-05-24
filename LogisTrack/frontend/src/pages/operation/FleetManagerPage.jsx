@@ -4,7 +4,7 @@ import PageHeader from "../../components/PageHeader";
 import TableWrap from "../../components/TableWrap";
 import { useAuth } from "../../context/AuthContext";
 import { formatDate, formatDateTime } from "../../lib/formatters";
-
+import { getLocalVehicles } from "../../lib/pouchdb";
 const vehicleInitial = {
   plate_number: "",
   trailer_plate: "",
@@ -52,16 +52,23 @@ function FleetManagerPage() {
   );
 
   const loadVehicles = async () => {
-    setError("");
-    try {
-      const response = await authRequest("/vehicles/");
-      setVehicles(response || []);
-    } catch (loadError) {
+  setError("");
+  try {
+    const response = await authRequest("/vehicles/");
+    setVehicles(response || []);
+  } catch (loadError) {
+    //  Offline fallback 
+    const local = await getLocalVehicles();
+    if (local.length > 0) {
+      setVehicles(local);
+      setError("Offline mod: son senkronizasyondaki veriler gösteriliyor.");
+    } else {
       setError(loadError.message);
-    } finally {
-      setIsLoading(false);
     }
-  };
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   useEffect(() => {
     loadVehicles();

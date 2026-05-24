@@ -4,6 +4,7 @@ import PageHeader from "../../components/PageHeader";
 import StatCard from "../../components/StatCard";
 import { useAuth } from "../../context/AuthContext";
 import { formatCurrency, formatNumber } from "../../lib/formatters";
+import { getLocalVehicles, getLocalTrips } from "../../lib/pouchdb";
 
 const quickTripInitial = {
   vehicle: "",
@@ -49,8 +50,36 @@ function DashboardPage() {
       if (!quickTripForm.vehicle && vehiclesResponse?.length) {
         setQuickTripForm((prev) => ({ ...prev, vehicle: String(vehiclesResponse[0].id) }));
       }
-    } catch (loadError) {
-      setError(loadError.message);
+    } catch {
+      const [localVehicles, localTrips] = await Promise.all([
+        getLocalVehicles(),
+        getLocalTrips(),
+      ]);
+
+      if (localVehicles.length > 0 || localTrips.length > 0) {
+        setVehicles(localVehicles);
+        setSummary({
+          monthly_revenue: localTrips.reduce(
+            (sum, t) => sum + parseFloat(t.total_amount || 0),
+            0
+          ),
+          total_trips: localTrips.length,
+          total_kilometers: localTrips.reduce(
+            (sum, t) => sum + parseFloat(t.cci_km || 0) + parseFloat(t.extra_km || 0),
+            0
+          ),
+          active_vehicles: localVehicles.length,
+          pending_maintenance: 0,
+          routes_in_database: 0,
+          _offline: true,
+        });
+        if (!quickTripForm.vehicle && localVehicles.length) {
+          setQuickTripForm((prev) => ({ ...prev, vehicle: String(localVehicles[0].id) }));
+        }
+        setError("Offline mod — son senkronizasyondaki veriler gösteriliyor.");
+      } else {
+        setError("Sunucuya bağlanılamıyor ve lokal veri bulunamadı.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -260,7 +289,13 @@ function DashboardPage() {
             </label>
             <label>
               Quantity
-              <input name="quantity" type="number" step="0.01" value={quickTripForm.quantity} onChange={onQuickTripChange} />
+              <input
+                name="quantity"
+                type="number"
+                step="0.01"
+                value={quickTripForm.quantity}
+                onChange={onQuickTripChange}
+              />
             </label>
             <label>
               Waybill No
@@ -272,11 +307,23 @@ function DashboardPage() {
             </label>
             <label>
               Price
-              <input name="price" type="number" step="0.01" value={quickTripForm.price} onChange={onQuickTripChange} />
+              <input
+                name="price"
+                type="number"
+                step="0.01"
+                value={quickTripForm.price}
+                onChange={onQuickTripChange}
+              />
             </label>
             <label>
               Extra KM
-              <input name="extra_km" type="number" step="0.01" value={quickTripForm.extra_km} onChange={onQuickTripChange} />
+              <input
+                name="extra_km"
+                type="number"
+                step="0.01"
+                value={quickTripForm.extra_km}
+                onChange={onQuickTripChange}
+              />
             </label>
             <label>
               Total Amount
@@ -321,7 +368,12 @@ function DashboardPage() {
             </label>
             <label className="field-span-2">
               Notes
-              <textarea name="notes" value={quickTripForm.notes} onChange={onQuickTripChange} rows={3} />
+              <textarea
+                name="notes"
+                value={quickTripForm.notes}
+                onChange={onQuickTripChange}
+                rows={3}
+              />
             </label>
             <button type="submit" className="primary-button field-span-2">
               Seferi Kaydet

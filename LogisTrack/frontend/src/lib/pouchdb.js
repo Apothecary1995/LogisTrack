@@ -1,41 +1,56 @@
+import PouchDB from 'pouchdb';
+import PouchDBFind from 'pouchdb-find';
 
-const PouchDBLib = window.PouchDB;
+PouchDB.plugin(PouchDBFind);
 
-if (PouchDBLib) {
-  PouchDBLib.plugin(window.PouchDBFind || {});
-}
+export const localDB = new PouchDB('logistrack');
 
-export const localDB = PouchDBLib ? new PouchDBLib('logistrack') : null;
+const COUCHDB_URL  = import.meta.env.VITE_COUCHDB_URL  || 'https://couchdb.ahmetcengiz.dev';
+const COUCHDB_USER = import.meta.env.VITE_COUCHDB_USER || 'logistrack';
+const COUCHDB_PASS = import.meta.env.VITE_COUCHDB_PASS || 'logistrack_pass';
 
-const remoteDB = PouchDBLib ? new PouchDBLib('https://couchdb.ahmetcengiz.dev/trips', {
-  auth: {
-    username: 'logistrack',
-    password: 'logistrack_pass'
-  }
-}) : null;
+const remoteDB = new PouchDB(`${COUCHDB_URL}/trips`, {
+  auth: { username: COUCHDB_USER, password: COUCHDB_PASS },
+});
 
 let syncHandler = null;
 
 export function startSync() {
-  if (!localDB || !remoteDB) {
-    console.error('[PouchDB] Not loaded!');
-    return;
-  }
   if (syncHandler) return;
 
   console.log('[PouchDB] Starting sync...');
 
-  syncHandler = localDB.sync(remoteDB, {
-    live: true,
-    retry: true
-  })
-  .on('change', (info) => console.log('[Sync] Changed:', info))
-  .on('paused', () => console.log('[Sync] Paused'))
-  .on('active', () => console.log('[Sync] Active'))
-  .on('error', (err) => console.error('[Sync] Error:', err));
-
-  window.__pouchDB = localDB;
-  window.__syncHandler = syncHandler;
+  syncHandler = localDB
+    .sync(remoteDB, { live: true, retry: true })
+    .on('change',  (info) => console.log('[Sync] Changed:', info))
+    .on('paused',  ()     => console.log('[Sync] Paused'))
+    .on('active',  ()     => console.log('[Sync] Active'))
+    .on('error',   (err)  => console.error('[Sync] Error:', err));
 
   return syncHandler;
+}
+
+// Offline fallback 
+export async function getLocalVehicles() {
+  try {
+    const result = await localDB.allDocs({ include_docs: true });
+    return result.rows
+      .map(r => r.doc)
+      .filter(d => d.type === 'vehicle')
+      .map(d => d.data);
+  } catch {
+    return [];
+  }
+}
+
+export async function getLocalTrips() {
+  try {
+    const result = await localDB.allDocs({ include_docs: true });
+    return result.rows
+      .map(r => r.doc)
+      .filter(d => d.type === 'trip')
+      .map(d => d.data);
+  } catch {
+    return [];
+  }
 }
