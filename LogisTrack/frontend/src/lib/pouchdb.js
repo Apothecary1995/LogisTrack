@@ -1,4 +1,4 @@
-import PouchDB from 'pouchdb';
+import PouchDB from 'pouchdb-browser';
 import PouchDBFind from 'pouchdb-find';
 
 PouchDB.plugin(PouchDBFind);
@@ -17,20 +17,15 @@ let syncHandler = null;
 
 export function startSync() {
   if (syncHandler) return;
-
-  console.log('[PouchDB] Starting sync...');
-
   syncHandler = localDB
     .sync(remoteDB, { live: true, retry: true })
     .on('change',  (info) => console.log('[Sync] Changed:', info))
     .on('paused',  ()     => console.log('[Sync] Paused'))
     .on('active',  ()     => console.log('[Sync] Active'))
     .on('error',   (err)  => console.error('[Sync] Error:', err));
-
   return syncHandler;
 }
 
-// Offline fallback 
 export async function getLocalVehicles() {
   try {
     const result = await localDB.allDocs({ include_docs: true });
