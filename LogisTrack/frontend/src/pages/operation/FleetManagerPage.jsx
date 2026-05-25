@@ -5,6 +5,8 @@ import TableWrap from "../../components/TableWrap";
 import { useAuth } from "../../context/AuthContext";
 import { formatDate, formatDateTime } from "../../lib/formatters";
 import { getLocalVehicles } from "../../lib/pouchdb";
+import { useOfflineRequest } from "../../hooks/useOfflineRequest";
+
 const vehicleInitial = {
   plate_number: "",
   trailer_plate: "",
@@ -37,6 +39,7 @@ const tripInitial = {
 
 function FleetManagerPage() {
   const { authRequest } = useAuth();
+  const { offlinePost } = useOfflineRequest(authRequest);
   const [vehicles, setVehicles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [vehicleForm, setVehicleForm] = useState(vehicleInitial);
@@ -52,23 +55,22 @@ function FleetManagerPage() {
   );
 
   const loadVehicles = async () => {
-  setError("");
-  try {
-    const response = await authRequest("/vehicles/");
-    setVehicles(response || []);
-  } catch (loadError) {
-    //  Offline fallback 
-    const local = await getLocalVehicles();
-    if (local.length > 0) {
-      setVehicles(local);
-      setError("Offline mod: son senkronizasyondaki veriler gösteriliyor.");
-    } else {
-      setError(loadError.message);
+    setError("");
+    try {
+      const response = await authRequest("/vehicles/");
+      setVehicles(response || []);
+    } catch (loadError) {
+      const local = await getLocalVehicles();
+      if (local.length > 0) {
+        setVehicles(local);
+        setError("Offline mod: son senkronizasyondaki veriler gösteriliyor.");
+      } else {
+        setError(loadError.message);
+      }
+    } finally {
+      setIsLoading(false);
     }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   useEffect(() => {
     loadVehicles();
@@ -110,11 +112,12 @@ function FleetManagerPage() {
         });
         setSuccess("Arac guncellendi.");
       } else {
-        await authRequest("/vehicles/", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
-        setSuccess("Arac kaydi olusturuldu.");
+        const result = await offlinePost("/vehicles/", payload, "pending_vehicles");
+        if (result.offline) {
+          setSuccess("Offline kaydedildi. Internet gelince gonderilecek.");
+        } else {
+          setSuccess("Arac kaydi olusturuldu.");
+        }
       }
 
       resetVehicleForm();
@@ -160,29 +163,36 @@ function FleetManagerPage() {
 
   const onTripSubmit = async (event) => {
     event.preventDefault();
-    if (!tripVehicle) {
-      return;
-    }
+    if (!tripVehicle) return;
 
     setError("");
     setSuccess("");
 
     try {
-      await authRequest(`/vehicles/${tripVehicle}/create-trip/`, {
-        method: "POST",
-        body: JSON.stringify({
-          ...tripForm,
-          departure_time: tripForm.departure_time || null,
-          arrival_time: tripForm.arrival_time || null,
-          quantity: tripForm.quantity || null,
-          price: tripForm.price || 0,
-          extra_km: tripForm.extra_km || 0,
-          total_amount: tripForm.total_amount || 0,
-          invoice_date: tripForm.invoice_date || null,
-        }),
-      });
+      const tripData = {
+        ...tripForm,
+        vehicle: tripVehicle,
+        departure_time: tripForm.departure_time || null,
+        arrival_time: tripForm.arrival_time || null,
+        quantity: tripForm.quantity || null,
+        price: tripForm.price || 0,
+        extra_km: tripForm.extra_km || 0,
+        total_amount: tripForm.total_amount || 0,
+        invoice_date: tripForm.invoice_date || null,
+      };
 
-      setSuccess("Sefer kaydi olusturuldu.");
+      const result = await offlinePost(
+        `/vehicles/${tripVehicle}/create-trip/`,
+        tripData,
+        "pending_trips"
+      );
+
+      if (result.offline) {
+        setSuccess("Offline kaydedildi. Internet gelince gonderilecek.");
+      } else {
+        setSuccess("Sefer kaydi olusturuldu.");
+      }
+
       setTripVehicle(null);
       setTripForm(tripInitial);
     } catch (tripError) {
@@ -405,7 +415,7 @@ function FleetManagerPage() {
             </label>
             <div className="button-row field-span-2">
               <button type="submit" className="primary-button">
-                Seferi Kaydet
+                {navigator.onLine ? "Seferi Kaydet" : "Offline Kaydet"}
               </button>
               <button type="button" className="ghost-button" onClick={() => setTripVehicle(null)}>
                 Kapat

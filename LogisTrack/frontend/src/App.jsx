@@ -21,6 +21,21 @@ import { OfflineBanner } from "./components/OfflineBanner";
 import { startSync } from "./lib/pouchdb";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { ToastNotification, useToasts } from "./components/ToastNotification";
+import { useOfflineSync } from "./hooks/useOfflineSync";
+import { useAuth } from "./context/AuthContext";
+
+function AppContent() {
+  const { authRequest } = useAuth();
+  const { pendingCount, syncPending } = useOfflineSync(authRequest);
+
+  useEffect(() => {
+    if (navigator.onLine && pendingCount > 0) {
+      syncPending();
+    }
+  }, [pendingCount, syncPending]);
+
+  return null;
+}
 
 function App() {
   const { toasts, addToast, removeToast } = useToasts();
@@ -59,6 +74,7 @@ function App() {
   return (
     <>
       <OfflineBanner />
+      <AppContent />
       <ToastNotification toasts={toasts} onRemove={removeToast} />
 
       <Routes>

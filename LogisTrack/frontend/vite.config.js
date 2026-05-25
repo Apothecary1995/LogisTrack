@@ -8,6 +8,9 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       workbox: {
+        additionalManifestEntries: [],
+        importScripts: ["/sw-custom.js"],
+        
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2,json}"],
         runtimeCaching: [
           {
