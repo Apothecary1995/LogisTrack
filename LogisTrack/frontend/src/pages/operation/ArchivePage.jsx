@@ -12,16 +12,21 @@ function ArchivePage() {
   const [error, setError] = useState("");
 
   const loadTrips = async () => {
-    setError("");
-    try {
-      const response = await authRequest("/trips/");
-      setTrips(response || []);
-    } catch (loadError) {
-      setError(loadError.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  setError("");
+  if (!navigator.onLine) {
+    setError("Offline mod — cached veriler gösteriliyor.");
+    setIsLoading(false);
+    return;
+  }
+  try {
+    const response = await authRequest("/trips/");
+    setTrips(response || []);
+  } catch (loadError) {
+    setError(loadError.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   useEffect(() => {
     loadTrips();

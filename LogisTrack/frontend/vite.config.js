@@ -10,7 +10,6 @@ export default defineConfig({
       workbox: {
         additionalManifestEntries: [],
         importScripts: ["/sw-custom.js"],
-        
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2,json}"],
         runtimeCaching: [
           {
@@ -19,9 +18,13 @@ export default defineConfig({
             handler: "CacheFirst",
             options: {
               cacheName: "api-cache",
+              // Vary başlık uyuşmazlığını çözmek için eklenen ayar:
+              matchOptions: {
+                ignoreVary: true,
+              },
               expiration: {
                 maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24,
+                maxAgeSeconds: 60 * 60 * 24, // 24 Saat
               },
               cacheableResponse: { statuses: [0, 200] },
             },
@@ -35,7 +38,7 @@ export default defineConfig({
               cacheName: "static-resources",
               expiration: {
                 maxEntries: 60,
-                maxAgeSeconds: 60 * 60 * 24 * 30,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 Gün
               },
             },
           },
