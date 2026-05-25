@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 
 import PageHeader from "../../components/PageHeader";
 import TableWrap from "../../components/TableWrap";
@@ -54,28 +54,55 @@ function FleetManagerPage() {
     [tripVehicle, vehicles]
   );
 
-  const loadVehicles = async () => {
+  const loadVehicles = useCallback(async () => {
     setError("");
+    setIsLoading(true);
+    
     try {
       const response = await authRequest("/vehicles/");
-      setVehicles(response || []);
-    } catch (loadError) {
-      const local = await getLocalVehicles();
-      if (local.length > 0) {
-        setVehicles(local);
-        setError("Offline mod: son senkronizasyondaki veriler gösteriliyor.");
-      } else {
-        setError(loadError.message);
+      if (response && response.length > 0) {
+        setVehicles(response);
+        setIsLoading(false);
+        return; 
       }
+    } catch (loadError) {
+      console.warn("[FleetManager] Online request failed, falling back to PouchDB:", loadError.message);
+    }
+
+    
+    try {
+      const local = await getLocalVehicles();
+      if (local && local.length > 0) {
+        setVehicles(local);
+        setError("Offline mod — cached veriler gösteriliyor.");
+      } else {
+        setVehicles([]);
+        setError("Offline — veri yüklenemedi.");
+      }
+    } catch (pouchError) {
+      console.error("[FleetManager] PouchDB fetch error:", pouchError);
+      setError("Yerel veritabanı hatası.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [authRequest]);
+
 
   useEffect(() => {
     loadVehicles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadVehicles]);
+
+  useEffect(() => {
+    const handleSync = () => {
+      console.log("[FleetManager] Background sync completed event caught! Refreshing vehicle list...");
+      loadVehicles();
+    };
+
+    window.addEventListener("sync-completed", handleSync);
+    return () => {
+      window.removeEventListener("sync-completed", handleSync);
+    };
+  }, [loadVehicles]);
 
   const onVehicleChange = (event) => {
     setVehicleForm((prev) => ({
@@ -371,7 +398,7 @@ function FleetManagerPage() {
             </label>
             <label>
               Extra KM
-              <input name="extra_km" type="number" step="0.01" value={tripForm.extra_km} onChange={onTripChange} />
+              <input name="extra_km" type="number" step="0.01" value={tripForm.price} onChange={onTripChange} />
             </label>
             <label>
               Total Amount

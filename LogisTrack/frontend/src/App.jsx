@@ -26,11 +26,22 @@ import { useAuth } from "./context/AuthContext";
 
 function AppContent() {
   const { authRequest } = useAuth();
-  const { pendingCount, syncPending } = useOfflineSync(authRequest);
+ 
+  const { pendingCount, syncPending: syncPendingBase } = useOfflineSync(authRequest);
+
+ 
+  const syncPending = useCallback(async () => {
+    if (typeof syncPendingBase === 'function') {
+      await syncPendingBase();
+      
+      console.log("[Sync] Triggering sync-completed event...");
+      window.dispatchEvent(new CustomEvent("sync-completed"));
+    }
+  }, [syncPendingBase]);
 
   useEffect(() => {
     if (navigator.onLine && pendingCount > 0) {
-      syncPending();
+      syncPending(); 
     }
   }, [pendingCount, syncPending]);
 
