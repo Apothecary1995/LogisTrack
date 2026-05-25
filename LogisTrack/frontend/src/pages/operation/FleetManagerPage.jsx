@@ -54,22 +54,26 @@ function FleetManagerPage() {
     [tripVehicle, vehicles]
   );
 
+  // Güncellenen loadVehicles fonksiyonu (Cache-Control başlığı eklendi)
   const loadVehicles = useCallback(async () => {
     setError("");
     setIsLoading(true);
-    
+
     try {
-      const response = await authRequest("/vehicles/");
-      if (response && response.length > 0) {
+      const response = await authRequest("/vehicles/", {
+        headers: {
+          "Cache-Control": "no-cache",
+        }
+      });
+      if (response && response.length >= 0) {
         setVehicles(response);
         setIsLoading(false);
-        return; 
+        return;
       }
     } catch (loadError) {
       console.warn("[FleetManager] Online request failed, falling back to PouchDB:", loadError.message);
     }
 
-    
     try {
       const local = await getLocalVehicles();
       if (local && local.length > 0) {
@@ -86,7 +90,6 @@ function FleetManagerPage() {
       setIsLoading(false);
     }
   }, [authRequest]);
-
 
   useEffect(() => {
     loadVehicles();
