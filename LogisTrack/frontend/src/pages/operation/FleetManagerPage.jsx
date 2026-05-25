@@ -54,42 +54,37 @@ function FleetManagerPage() {
     [tripVehicle, vehicles]
   );
 
-  // Güncellenen loadVehicles fonksiyonu (Cache-Control başlığı eklendi)
-  const loadVehicles = useCallback(async () => {
-    setError("");
-    setIsLoading(true);
-
-    try {
-      const response = await authRequest("/vehicles/", {
-        headers: {
-          "Cache-Control": "no-cache",
-        }
-      });
-      if (response && response.length >= 0) {
-        setVehicles(response);
-        setIsLoading(false);
-        return;
-      }
-    } catch (loadError) {
-      console.warn("[FleetManager] Online request failed, falling back to PouchDB:", loadError.message);
-    }
-
-    try {
-      const local = await getLocalVehicles();
-      if (local && local.length > 0) {
-        setVehicles(local);
-        setError("Offline mod — cached veriler gösteriliyor.");
-      } else {
-        setVehicles([]);
-        setError("Offline — veri yüklenemedi.");
-      }
-    } catch (pouchError) {
-      console.error("[FleetManager] PouchDB fetch error:", pouchError);
-      setError("Yerel veritabanı hatası.");
-    } finally {
+  
+ const loadVehicles = useCallback(async () => {
+  setError("");
+  setIsLoading(true);
+  
+  try {
+    const response = await authRequest("/vehicles/");
+    if (response && response.length >= 0) {
+      setVehicles(response);
       setIsLoading(false);
+      return;
     }
-  }, [authRequest]);
+  } catch (loadError) {
+    console.warn("[FleetManager] Online request failed:", loadError.message);
+  }
+
+  try {
+    const local = await getLocalVehicles();
+    if (local && local.length > 0) {
+      setVehicles(local);
+      setError("Offline mod — cached veriler gösteriliyor.");
+    } else {
+      setVehicles([]);
+      setError("Offline — veri yüklenemedi.");
+    }
+  } catch (pouchError) {
+    setError("Yerel veritabanı hatası.");
+  } finally {
+    setIsLoading(false);
+  }
+}, [authRequest]);
 
   useEffect(() => {
     loadVehicles();

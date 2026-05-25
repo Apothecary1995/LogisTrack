@@ -13,22 +13,18 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2,json}"],
         runtimeCaching: [
           {
-            urlPattern: ({ url }) =>
-              url.origin === "https://api.ahmetcengiz.dev",
-            handler: "CacheFirst",
-            options: {
-              cacheName: "api-cache",
-              // Vary başlık uyuşmazlığını çözmek için eklenen ayar:
-              matchOptions: {
-                ignoreVary: true,
-              },
-              expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24, // 24 Saat
-              },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
+  urlPattern: ({ url }) =>
+    url.origin === "https://api.ahmetcengiz.dev",
+  handler: "StaleWhileRevalidate",
+  options: {
+    cacheName: "api-cache",
+    expiration: {
+      maxEntries: 200,
+      maxAgeSeconds: 60 * 60 * 24,
+    },
+    cacheableResponse: { statuses: [0, 200] },
+  },
+},
           {
             urlPattern: ({ request }) =>
               request.destination === "image" ||
