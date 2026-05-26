@@ -90,3 +90,56 @@ func TestGetIP_XForwardedFor(t *testing.T) {
 		t.Errorf("expected 5.6.7.8, got %s", ip)
 	}
 }
+func TestNewRateLimiter_InitialState(t *testing.T) {
+	rl := NewRateLimiter(10, time.Minute)
+	if rl.limit != 10 {
+		t.Errorf("expected limit 10, got %d", rl.limit)
+	}
+	if rl.requests == nil {
+		t.Error("requests map should not be nil")
+	}
+}
+
+func TestRateLimiter_WindowExpiry(t *testing.T) {
+	rl := NewRateLimiter(2, 100*time.Millisecond)
+	rl.Allow("10.0.0.1")
+	rl.Allow("10.0.0.1")
+
+	if rl.Allow("10.0.0.1") {
+		t.Error("should be blocked")
+	}
+
+	time.Sleep(150 * time.Millisecond)
+
+	if !rl.Allow("10.0.0.1") {
+		t.Error("should be allowed after window expiry")
+	}
+}
+
+func TestGetIP_RemoteAddr(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.RemoteAddr = "9.9.9.9:1234"
+	ip := getIP(req)
+	if ip != "9.9.9.9:1234" {
+		t.Errorf("expected RemoteAddr, got %s", ip)
+	}
+}
+
+func TestRules_ExportLimit(t *testing.T) {
+	rules := &Rules{
+		global: NewRateLimiter(100, time.Minute),
+		auth:   NewRateLimiter(100, time.Minute),
+		export: NewRateLimiter(2, time.Hour),
+	}
+
+	rules.Check("10.0.0.3", "/api/archive/export/")
+	rules.Check("10.0.0.3", "/api/archive/export/")
+
+	allowed, msg := rules.Check("10.0.0.3", "/api/archive/export/")
+	if allowed {
+		t.Error("export should be rate limited")
+	}
+	if msg == "" {
+		t.Error("message should not be empty")
+	}
+}

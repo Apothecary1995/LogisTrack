@@ -110,3 +110,49 @@ func TestConnectRabbitMQ_InvalidURL(t *testing.T) {
 		t.Error("expected error for invalid URL")
 	}
 }
+func TestNewHub_InitialState(t *testing.T) {
+	hub := newHub()
+	if hub.clients == nil {
+		t.Error("clients map should not be nil")
+	}
+	if hub.broadcast == nil {
+		t.Error("broadcast channel should not be nil")
+	}
+}
+
+func TestHub_MultipleClients(t *testing.T) {
+	hub := newHub()
+	go hub.run()
+
+	client1 := &Client{hub: hub, send: make(chan []byte, 256)}
+	client2 := &Client{hub: hub, send: make(chan []byte, 256)}
+
+	hub.register <- client1
+	hub.register <- client2
+	time.Sleep(50 * time.Millisecond)
+
+	hub.mu.Lock()
+	count := len(hub.clients)
+	hub.mu.Unlock()
+
+	if count != 2 {
+		t.Errorf("expected 2 clients, got %d", count)
+	}
+
+	hub.unregister <- client1
+	hub.unregister <- client2
+}
+
+func TestEvent_EmptyPayload(t *testing.T) {
+	event := Event{
+		Type:    "test.event",
+		Payload: nil,
+	}
+	data, err := json.Marshal(event)
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+	if len(data) == 0 {
+		t.Error("marshaled data should not be empty")
+	}
+}

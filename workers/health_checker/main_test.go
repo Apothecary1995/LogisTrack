@@ -91,3 +91,38 @@ func TestServiceState_Transition(t *testing.T) {
 		t.Error("state should be healthy after recovery")
 	}
 }
+func TestCheckService_Redirect(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusFound)
+	}))
+	defer server.Close()
+
+	result := checkService(server.URL)
+	if !result {
+		t.Error("302 redirect should be considered healthy (< 500)")
+	}
+}
+
+func TestMonitor_ServicesCount(t *testing.T) {
+	if len(services) == 0 {
+		t.Error("services list should not be empty")
+	}
+	for _, s := range services {
+		if s.Name == "" {
+			t.Error("service name should not be empty")
+		}
+		if s.URL == "" {
+			t.Error("service URL should not be empty")
+		}
+	}
+}
+
+func TestSendAlert_NoSMTP(t *testing.T) {
+	os.Unsetenv("SMTP_USER")
+	os.Unsetenv("SMTP_PASSWORD")
+
+	err := sendAlert("Test Subject", "Test Body")
+	if err != nil {
+		t.Errorf("expected nil when SMTP not configured: %v", err)
+	}
+}
