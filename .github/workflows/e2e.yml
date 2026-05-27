@@ -14,12 +14,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Create .env file
+        run: |
+          echo "RABBITMQ_URL=amqp://logistrack:logistrack_pass@rabbitmq:5672/" >> LogisTrack/.env
+          echo "SMTP_HOST=smtp.gmail.com" >> LogisTrack/.env
+          echo "SMTP_PORT=587" >> LogisTrack/.env
+          echo "SMTP_USER=${{ secrets.SMTP_USER }}" >> LogisTrack/.env
+          echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> LogisTrack/.env
+          echo "EXPORT_DIR=/app/exports" >> LogisTrack/.env
+          echo "COUCHDB_URL=http://logistrack:logistrack_pass@couchdb:5984/" >> LogisTrack/.env
+          echo "ALERT_EMAIL=${{ secrets.SMTP_USER }}" >> LogisTrack/.env
+          echo "CHECK_INTERVAL=30s" >> LogisTrack/.env
+
+      - name: Start services
+        run: |
+          cd LogisTrack
+          docker compose up -d --build
+
+      - name: Wait for backend to be ready
+        run: |
+          echo "Waiting for backend..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8000/api/health/ | grep -q "ok"; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Attempt $i - waiting..."
+            sleep 5
+          done
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Install dependencies
+      - name: Install Playwright
         run: |
           cd e2e
           npm install
@@ -29,6 +58,8 @@ jobs:
         run: |
           cd e2e
           npx playwright test
+        env:
+          BASE_URL: http://localhost:5173
 
       - name: Upload test report
         uses: actions/upload-artifact@v4
@@ -36,3 +67,9 @@ jobs:
         with:
           name: playwright-report
           path: e2e/playwright-report/
+
+      - name: Stop services
+        if: always()
+        run: |
+          cd LogisTrack
+          docker compose down

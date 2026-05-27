@@ -25,7 +25,7 @@ test('user can login successfully', async ({ page }) => {
   await page.fill('input[type=email]', 'admin@logitarget.com');
   await page.fill('input[type=password]', 'Admin123');
   await page.click('button[type=submit]');
-  await page.waitForURL(/dashboard/);
+  await page.waitForURL(/dashboard/, { timeout: 15000 });
   await expect(page).toHaveURL(/dashboard/);
 });
 
