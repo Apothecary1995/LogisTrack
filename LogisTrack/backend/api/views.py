@@ -135,7 +135,7 @@ class RegisterView(APIView):
             "notify_email": True,
             "notify_push": False,
             "subject": "LogisTrack Smart Logistics & Fleet Management",
-            "body": f"Hello {user.full_name}, your account created.",
+            "body": f"{user.full_name}, Your account created.",
         })
 
         refresh = RefreshToken.for_user(user)
@@ -173,9 +173,28 @@ class ForgotPasswordView(APIView):
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        
+        email = serializer.validated_data["email"]
+        
+        try:
+            user = User.objects.get(email=email)
+            # lets use notification worker to send mail forgotten passowrd 
+            publish_notification({
+                "event": "user.forgot_password",
+                "event_type": "forgot_password",
+                "user_id": user.id,
+                "email": user.email,
+                "notify_email": True,
+                "notify_push": False,
+                "subject": "LogisTrack - Password Reset Request",
+                "body": f"Hello {user.full_name},\n\nYou requested a password reset for your LogisTrack account.\n\nPlease contact your system administrator to reset your password.\n\nIf you did not request this, please ignore this email.\n\nLogisTrack Team",
+            })
+        except User.DoesNotExist:
+            pass  
+
         return Response(
             {
-                "message": "If the email exists, password reset instructions have been queued.",
+                "message": "If the email exists, password reset instructions have been sent.",
             }
         )
 

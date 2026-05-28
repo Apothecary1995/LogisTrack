@@ -81,14 +81,14 @@ func TestServiceState_Transition(t *testing.T) {
 	state.Since = time.Now()
 
 	if state.Healthy {
-		t.Error("state should be unhealthy")
+		t.Errorf("service %s: state should be unhealthy", state.Name)
 	}
 
 	state.Healthy = true
 	state.Since = time.Now()
 
 	if !state.Healthy {
-		t.Error("state should be healthy after recovery")
+		t.Errorf("service %s: state should be healthy after recovery", state.Name)
 	}
 }
 func TestCheckService_Redirect(t *testing.T) {
