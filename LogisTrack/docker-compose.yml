@@ -185,3 +185,4 @@ volumes:
   export_files:
   couchdb_data:
   grafana_data:
+  sqlite_data:
