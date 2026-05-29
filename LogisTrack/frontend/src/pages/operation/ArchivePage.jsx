@@ -18,7 +18,7 @@ function ArchivePage() {
   const loadTrips = async () => {
     setError("");
     if (!navigator.onLine) {
-      setError("Offline mod — cached veriler gösteriliyor.");
+      setError("Offline mod showing cached data");
       setIsLoading(false);
       return;
     }
@@ -48,7 +48,7 @@ function ArchivePage() {
   const onExportEmail = async () => {
     try {
       const response = await authRequest("/archive/export/", { method: "POST" });
-      alert(response.message || "Export request received. Check your email shortly.");
+      alert(response.message || "Export request received. Check your email.");
     } catch (exportError) {
       setError(exportError.message);
     }
@@ -57,7 +57,7 @@ function ArchivePage() {
   const onExportPDF = async () => {
     try {
       const response = await authRequest("/archive/export/pdf/", { method: "POST" });
-      alert(response.message || "PDF export request received. Check your email shortly.");
+      alert(response.message || "PDF export request received. Check your email.");
     } catch (exportError) {
       setError(exportError.message);
     }
