@@ -55,7 +55,7 @@ func (l *Lexer) NextToken() Token {
 	// if there is a seperator
 	if l.input[l.pos] == '|' {
 		l.pos++
-		l.col++ // Sütun ilerle
+		l.col++ // forward to column
 		return Token{Type: SEP, Literal: "|"}
 	}
 

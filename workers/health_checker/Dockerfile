@@ -7,6 +7,6 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o rate_limiter .
+RUN go build -o health_checker .
 
-CMD ["./rate_limiter"]
+CMD ["./health_checker"]

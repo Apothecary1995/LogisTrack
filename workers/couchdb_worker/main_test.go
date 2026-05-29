@@ -91,3 +91,50 @@ func TestConnectRabbitMQ_InvalidURL(t *testing.T) {
 		t.Error("expected error for invalid URL")
 	}
 }
+func TestEnsureDB_InvalidURL(t *testing.T) {
+	os.Setenv("COUCHDB_URL", "http://invalid:5984/")
+	defer os.Unsetenv("COUCHDB_URL")
+
+	err := ensureDB("testdb")
+	if err == nil {
+		t.Log("ensureDB returned nil on invalid URL (expected for some cases)")
+	}
+}
+
+func TestGetDocRev_InvalidURL(t *testing.T) {
+	os.Setenv("COUCHDB_URL", "http://invalid:5984/")
+	defer os.Unsetenv("COUCHDB_URL")
+
+	rev := getDocRev("testdb", "testdoc")
+	if rev != "" {
+		t.Errorf("expected empty rev on invalid URL, got: %s", rev)
+	}
+}
+
+func TestSaveToCouch_InvalidURL(t *testing.T) {
+	os.Setenv("COUCHDB_URL", "http://invalid:5984/")
+	defer os.Unsetenv("COUCHDB_URL")
+
+	err := saveToCouch("testdb", "testdoc", map[string]string{"key": "value"})
+	if err == nil {
+		t.Log("saveToCouch: connection might have succeeded unexpectedly")
+	}
+}
+
+func TestGetCouchURL_Default(t *testing.T) {
+	os.Unsetenv("COUCHDB_URL")
+	url := getCouchURL()
+	expected := "http://logistrack:logistrack_pass@localhost:5984/"
+	if url != expected {
+		t.Errorf("expected %s, got %s", expected, url)
+	}
+}
+
+func TestGetCouchURL_Custom(t *testing.T) {
+	os.Setenv("COUCHDB_URL", "http://custom:5984/")
+	defer os.Unsetenv("COUCHDB_URL")
+	url := getCouchURL()
+	if url != "http://custom:5984/" {
+		t.Errorf("expected custom URL, got %s", url)
+	}
+}

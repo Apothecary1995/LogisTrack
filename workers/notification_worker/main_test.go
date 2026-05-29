@@ -152,3 +152,31 @@ func TestRabbitMQIntegration(t *testing.T) {
 		}
 	}
 }
+func TestSendEmail_NoSMTP(t *testing.T) {
+	os.Unsetenv("SMTP_HOST")
+	os.Unsetenv("SMTP_USER")
+	os.Unsetenv("SMTP_PASSWORD")
+
+	err := sendEmail("test@test.com", "Test Subject", "Test Body")
+	if err != nil {
+		t.Errorf("expected nil when SMTP not configured: %v", err)
+	}
+}
+
+func TestHandleNotification_WithEmail(t *testing.T) {
+	os.Unsetenv("SMTP_HOST")
+	os.Unsetenv("SMTP_USER")
+	os.Unsetenv("SMTP_PASSWORD")
+
+	msg := NotificationMessage{
+		Email:       "test@test.com",
+		NotifyEmail: true,
+		Subject:     "Test",
+		Body:        "Test body",
+	}
+
+	err := handleNotification(msg)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
