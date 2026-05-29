@@ -60,6 +60,20 @@ func buildFilters(tokens []Token) map[string]string {
 	return filters
 }
 
+func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next(w, r)
+	}
+}
+
 func searchHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -105,7 +119,6 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(resp.StatusCode)
 
 	var result interface{}
@@ -124,8 +137,8 @@ func main() {
 		port = "8070"
 	}
 
-	http.HandleFunc("/search", searchHandler)
-	http.HandleFunc("/health", healthHandler)
+	http.HandleFunc("/search", corsMiddleware(searchHandler))
+	http.HandleFunc("/health", corsMiddleware(healthHandler))
 
 	log.Printf("[Search] Service starting on :%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
