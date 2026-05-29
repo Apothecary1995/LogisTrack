@@ -60,3 +60,9 @@ jobs:
           cd workers/health_checker
           go mod tidy
           go test ./... -v
+          
+      - name: Run search service tests
+        run: |
+          cd workers/search_service
+          go mod tidy
+          go test ./... -v    

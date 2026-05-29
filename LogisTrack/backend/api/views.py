@@ -387,6 +387,44 @@ class DashboardSummaryView(APIView):
         )
 
 
+
+class TripSearchView(APIView):
+    def get(self, request):
+        company = request.user.company
+        queryset = Trip.objects.filter(company=company).select_related("vehicle")
+
+        plate = request.query_params.get("plate")
+        location = request.query_params.get("location")
+        location2 = request.query_params.get("location2")
+        q = request.query_params.get("q")
+        date = request.query_params.get("date")
+
+        from django.db.models import Q
+
+        if plate:
+            queryset = queryset.filter(plate_number__icontains=plate)
+        if location:
+            queryset = queryset.filter(
+                Q(origin__icontains=location) | Q(destination__icontains=location)
+            )
+        if location2:
+            queryset = queryset.filter(
+                Q(origin__icontains=location2) | Q(destination__icontains=location2)
+            )
+        if q:
+            queryset = queryset.filter(
+                Q(customer__icontains=q) |
+                Q(notes__icontains=q) |
+                Q(cargo_type__icontains=q) |
+                Q(origin__icontains=q) |
+                Q(destination__icontains=q)
+            )
+        if date:
+            queryset = queryset.filter(created_at__date=date)
+
+        return Response(TripSerializer(queryset, many=True).data)
+
+
 class RouteDistanceUploadView(APIView):
     parser_classes = [MultiPartParser]
     permission_classes = [IsCompanyAdminOrReadOnly]

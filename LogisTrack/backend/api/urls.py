@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
-
+from .views import TripSearchView
 from .views import (
     ArchiveExportView,
     ChangePasswordView,
@@ -59,4 +59,5 @@ urlpatterns = [
     path("erp/settings/", ERPSettingView.as_view(), name="erp-settings"),
     path("", include(router.urls)),
     path("archive/export/pdf/", PDFExportView.as_view(), name="archive-export-pdf"),
+    path("trips/search/", TripSearchView.as_view(), name="trip-search"),
 ]

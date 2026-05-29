@@ -7,5 +7,6 @@ use (
 	./workers/notification_worker
 	./workers/pdf_converter
 	./workers/rate_limiter
+	./workers/search_service
 	./workers/websocket_server
 )

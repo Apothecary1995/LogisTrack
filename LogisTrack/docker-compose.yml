@@ -179,6 +179,19 @@ services:
       - backend
       - rabbitmq
     restart: unless-stopped
+    
+  search_service:
+    build:
+      context: ../workers/search_service
+    container_name: logistrack-search
+    environment:
+      BACKEND_URL: http://backend:8000
+      SEARCH_PORT: "8070"
+    ports:
+      - "8070:8070"
+    depends_on:
+      - backend
+    restart: unless-stopped  
 
 volumes:
   rabbitmq_data:
