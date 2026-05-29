@@ -24,3 +24,27 @@ jobs:
           cd workers/export_worker
           go mod tidy
           go test ./... -v
+
+      - name: Run notification worker tests
+        run: |
+          cd workers/notification_worker
+          go mod tidy
+          go test ./... -v
+
+      - name: Run couchdb worker tests
+        run: |
+          cd workers/couchdb_worker
+          go mod tidy
+          go test ./... -v
+
+      - name: Run rate limiter tests
+        run: |
+          cd workers/rate_limiter
+          go mod tidy
+          go test ./... -v
+
+      - name: Run pdf converter tests
+        run: |
+          cd workers/pdf_converter
+          go mod tidy
+          go test ./... -v
