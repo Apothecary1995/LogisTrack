@@ -57,7 +57,8 @@ urlpatterns = [
     path("payroll/overview/", PayrollOverviewView.as_view(), name="payroll-overview"),
     path("employees/insights/", EmployeeInsightView.as_view(), name="employee-insights"),
     path("erp/settings/", ERPSettingView.as_view(), name="erp-settings"),
+    path("trips/search/", TripSearchView.as_view(), name="trip-search"),
     path("", include(router.urls)),
     path("archive/export/pdf/", PDFExportView.as_view(), name="archive-export-pdf"),
-    path("trips/search/", TripSearchView.as_view(), name="trip-search"),
+    
 ]

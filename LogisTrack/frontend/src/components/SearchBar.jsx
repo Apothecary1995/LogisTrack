@@ -41,7 +41,7 @@ export function SearchBar({ onResults, onClear }) {
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search: plate, city, (fuzzy search)"
+        placeholder="Search: plate, city, (fuzzy search allowed)"
         style={{ flex: 1, padding: "8px 12px", borderRadius: "6px", border: "1px solid #ccc", fontSize: "14px" }}
       />
       <button type="submit" className="primary-button" disabled={isSearching}>
