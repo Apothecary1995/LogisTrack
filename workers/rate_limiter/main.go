@@ -146,7 +146,27 @@ func main() {
 	proxy := httputil.NewSingleHostReverseProxy(target)
 	rules := NewRules(redisClient)
 
+	allowedOrigins := map[string]bool{
+		"http://localhost:5173":              true,
+		"https://logistrack.ahmetcengiz.dev": true,
+	}
+
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if allowedOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Vary", "Origin")
+		}
+
+		if r.Method == http.MethodOptions {
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+			w.Header().Set("Access-Control-Max-Age", "86400")
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
 		ip := getIP(r)
 		allowed, message := rules.Check(ip, r.URL.Path)
 
