@@ -8,3 +8,6 @@ services:
       - "5173:5173"
     depends_on:
       - backend
+  backend:
+    ports:
+      - "8000:8000"
