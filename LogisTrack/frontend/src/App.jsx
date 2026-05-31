@@ -18,7 +18,6 @@ import FuelPage from "./pages/technicfinance/FuelPage";
 import PayrollPage from "./pages/technicfinance/PayrollPage";
 import ServiceRepairPage from "./pages/technicfinance/ServiceRepairPage";
 import { OfflineBanner } from "./components/OfflineBanner";
-import { startSync } from "./lib/pouchdb";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { ToastNotification, useToasts } from "./components/ToastNotification";
 import { useOfflineSync } from "./hooks/useOfflineSync";
@@ -72,15 +71,6 @@ function App() {
 
   useWebSocket(handleEvent);
 
-  useEffect(() => {
-    try {
-      console.log('[App] Starting PouchDB sync...');
-      startSync();
-      console.log('[App] PouchDB sync started');
-    } catch (err) {
-      console.error('[App] PouchDB sync error:', err);
-    }
-  }, []);
 
   return (
     <>

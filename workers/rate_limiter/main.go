@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -108,6 +109,23 @@ func (r *Rules) Check(ip, path string) (bool, string) {
 	return true, ""
 }
 
+// CORS origin allowlist
+
+func buildAllowedOrigins() map[string]bool {
+	origins := map[string]bool{
+		"http://localhost:5173":              true,
+		"https://logistrack.ahmetcengiz.dev": true,
+	}
+	if env := os.Getenv("CORS_ALLOWED_ORIGINS"); env != "" {
+		for _, o := range strings.Split(env, ",") {
+			if o = strings.TrimSpace(o); o != "" {
+				origins[o] = true
+			}
+		}
+	}
+	return origins
+}
+
 //IP extraction
 
 func getIP(r *http.Request) string {
@@ -145,12 +163,20 @@ func main() {
 
 	proxy := httputil.NewSingleHostReverseProxy(target)
 	rules := NewRules(redisClient)
+	allowedOrigins := buildAllowedOrigins()
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip := getIP(r)
 		allowed, message := rules.Check(ip, r.URL.Path)
 
 		if !allowed {
+			// Only rate_limiter's own error responses need explicit CORS headers.
+			// Proxied responses go through Django's corsheaders middleware.
+			origin := r.Header.Get("Origin")
+			if allowedOrigins[origin] {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Vary", "Origin")
+			}
 			log.Printf("[RATE LIMIT] Blocked %s → %s", ip, r.URL.Path)
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("Retry-After", "60")

@@ -131,24 +131,29 @@ export function AuthProvider({ children }) {
         headers,
       });
 
-      if (response.status === 401 && retry && refreshToken) {
-        try {
-          const newAccess = await refreshAccess();
-          return authRequest(
-            path,
-            {
-              ...options,
-              headers: {
-                ...(options.headers || {}),
-                Authorization: `Bearer ${newAccess}`,
+      if (response.status === 401) {
+        if (retry && refreshToken) {
+          try {
+            const newAccess = await refreshAccess();
+            return authRequest(
+              path,
+              {
+                ...options,
+                headers: {
+                  ...(options.headers || {}),
+                  Authorization: `Bearer ${newAccess}`,
+                },
               },
-            },
-            false
-          );
-        } catch {
-          logout();
-          throw new Error("Session expired. Please sign in again.");
+              false
+            );
+          } catch {
+            // refresh de başarısız, aşağıda logout yapılacak
+          }
         }
+        logout();
+        const authErr = new Error("Session expired. Please sign in again.");
+        authErr.isAuthError = true;
+        throw authErr;
       }
 
       return parseApiResponse(response);
