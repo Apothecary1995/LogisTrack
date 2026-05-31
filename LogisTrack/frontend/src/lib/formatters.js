@@ -34,3 +34,4 @@ export function formatDateTime(value) {
   }
   return date.toLocaleString("tr-TR");
 }
+

@@ -62,3 +62,4 @@ urlpatterns = [
     path("archive/export/pdf/", PDFExportView.as_view(), name="archive-export-pdf"),
     
 ]
+
