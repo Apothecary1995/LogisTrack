@@ -17,6 +17,62 @@ services:
       retries: 5
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: logistrack-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  rate_limiter:
+    build:
+      context: ../workers/rate_limiter
+    container_name: logistrack-rate-limiter
+    environment:
+      BACKEND_URL: http://backend:8000
+      LISTEN_PORT: "8080"
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+      - redis
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: logistrack-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: logistrack-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: logistrack123
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  couchdb:
+    image: couchdb:3
+    container_name: logistrack-couchdb
+    environment:
+      COUCHDB_USER: logistrack
+      COUCHDB_PASSWORD: logistrack_pass
+    ports:
+      - "5984:5984"
+    volumes:
+      - couchdb_data:/opt/couchdb/data
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -24,10 +80,10 @@ services:
     environment:
       DJANGO_SECRET_KEY: dev-only-change-this-key-please-32chars
       DJANGO_DEBUG: "1"
-      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,logistrack.ahmetcengiz.dev
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,logistrack.ahmetcengiz.dev,api.ahmetcengiz.dev,backend
       CORS_ALLOWED_ORIGINS: http://localhost:5173,https://logistrack.ahmetcengiz.dev
       CSRF_TRUSTED_ORIGINS: http://localhost:5173,https://logistrack.ahmetcengiz.dev
-      SQLITE_PATH: /app/data/db.sqlite3
+      SQLITE_PATH: /app/db.sqlite3
       DJANGO_SUPERUSER_EMAIL: admin@logitarget.com
       DJANGO_SUPERUSER_PASSWORD: Admin123
       DJANGO_SUPERUSER_FULL_NAME: LogiTarget Admin
@@ -36,7 +92,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/data:/app/data
+      - backend_db:/app
       - export_files:/app/exports
     depends_on:
       rabbitmq:
@@ -46,9 +102,9 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        VITE_API_BASE_URL: https://api.ahmetcengiz.dev/api
     container_name: logitarget-frontend
-    environment:
-      VITE_API_BASE_URL: http://localhost:8000/api
     depends_on:
       - backend
     ports:
@@ -57,11 +113,10 @@ services:
 
   export_worker:
     build:
-      context: ./workers/export_worker
+      context: ../workers/export_worker
     container_name: logistrack-export-worker
-    environment:
-      RABBITMQ_URL: amqp://logistrack:logistrack_pass@rabbitmq:5672/
-      EXPORT_DIR: /app/exports
+    env_file:
+      - .env
     volumes:
       - export_files:/app/exports
     depends_on:
@@ -69,6 +124,75 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  notification_worker:
+    build:
+      context: ../workers/notification_worker
+    container_name: logistrack-notification-worker
+    env_file:
+      - .env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  couchdb_worker:
+    build:
+      context: ../workers/couchdb_worker
+    container_name: logistrack-couchdb-worker
+    environment:
+      RABBITMQ_URL: amqp://logistrack:logistrack_pass@rabbitmq:5672/
+      COUCHDB_URL: http://logistrack:logistrack_pass@couchdb:5984/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      couchdb:
+        condition: service_started
+    restart: unless-stopped
+
+  websocket_server:
+    build:
+      context: ../workers/websocket_server
+    container_name: logistrack-websocket
+    environment:
+      RABBITMQ_URL: amqp://logistrack:logistrack_pass@rabbitmq:5672/
+      WS_PORT: "8090"
+    ports:
+      - "8090:8090"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  health_checker:
+    build:
+      context: ../workers/health_checker
+    container_name: logistrack-health-checker
+    env_file:
+      - .env
+    environment:
+      CHECK_INTERVAL: 30s
+      ALERT_EMAIL: ahmet.cengiz19951995@gmail.com
+    depends_on:
+      - backend
+      - rabbitmq
+    restart: unless-stopped
+
+  search_service:
+    build:
+      context: ../workers/search_service
+    container_name: logistrack-search
+    environment:
+      BACKEND_URL: http://backend:8000
+      SEARCH_PORT: "8070"
+    ports:
+      - "8070:8070"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   rabbitmq_data:
   export_files:
+  couchdb_data:
+  grafana_data:
+  backend_db:

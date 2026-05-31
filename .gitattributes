@@ -1,0 +1,7 @@
+# .gitattributes
+e2e/**          linguist-vendored
+e2e/playwright-report/** linguist-generated
+*.html linguist-documentation
+
+e2e/playwright-report/** linguist-generated=true
+e2e/test-results/**     linguist-generated=true
