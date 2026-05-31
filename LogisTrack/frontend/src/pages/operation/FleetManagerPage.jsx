@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { formatDate, formatDateTime } from "../../lib/formatters";
 import { getLocalVehicles } from "../../lib/pouchdb";
 import { useOfflineRequest } from "../../hooks/useOfflineRequest";
+import { useWebSocket } from "../../hooks/useWebSocket";
 
 const vehicleInitial = {
   plate_number: "",
@@ -101,6 +102,14 @@ function FleetManagerPage() {
       window.removeEventListener("sync-completed", handleSync);
     };
   }, [loadVehicles]);
+
+  const handleWsEvent = useCallback((event) => {
+    if (event.type === "vehicle.created" || event.type === "vehicle.updated" || event.type === "vehicle.deleted") {
+      loadVehicles();
+    }
+  }, [loadVehicles]);
+
+  useWebSocket(handleWsEvent);
 
   const onVehicleChange = (event) => {
     setVehicleForm((prev) => ({
