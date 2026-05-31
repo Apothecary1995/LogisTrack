@@ -69,6 +69,60 @@ export function useOfflineSync(authRequest) {
         }
       }
 
+      const serviceRepairs = await getPending("pending_service_repairs");
+      for (const item of serviceRepairs) {
+        try {
+          await authRequest("/service-repairs/", {
+            method: "POST",
+            body: JSON.stringify(item.data),
+          });
+          await deletePending("pending_service_repairs", item.id);
+          console.log("[Sync] Service repair synced:", item.id);
+        } catch (err) {
+          console.error("[Sync] Service repair failed:", err);
+          if (err.isAuthError) {
+            console.warn("[Sync] Auth error, aborting sync.");
+            throw err;
+          }
+          if (err.message && (
+            err.message.includes("already exists") ||
+            err.message.includes("unique") ||
+            err.message.includes("400") ||
+            err.message.includes("409")
+          )) {
+            console.log("[Sync] Duplicate service, removing:", item.id);
+            await deletePending("pending_service_repairs", item.id);
+          }
+        }
+      }
+
+      const fuelEntries = await getPending("pending_fuel_entries");
+      for (const item of fuelEntries) {
+        try {
+          await authRequest("/fuel-entries/", {
+            method: "POST",
+            body: JSON.stringify(item.data),
+          });
+          await deletePending("pending_fuel_entries", item.id);
+          console.log("[Sync] Fuel entry synced:", item.id);
+        } catch (err) {
+          console.error("[Sync] Fuel entry failed:", err);
+          if (err.isAuthError) {
+            console.warn("[Sync] Auth error, aborting sync.");
+            throw err;
+          }
+          if (err.message && (
+            err.message.includes("already exists") ||
+            err.message.includes("unique") ||
+            err.message.includes("400") ||
+            err.message.includes("409")
+          )) {
+            console.log("[Sync] Duplicate fuel entry, removing:", item.id);
+            await deletePending("pending_fuel_entries", item.id);
+          }
+        }
+      }
+
       await updateCount();
       if (onSynced) onSynced();
     } finally {

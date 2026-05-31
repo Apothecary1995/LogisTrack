@@ -14,7 +14,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .publisher import publish_notification, publish_export, publish_trip, publish_vehicle
+from .publisher import publish_notification, publish_export, publish_trip, publish_vehicle, publish_service, publish_fuel
 from .models import (
     DriverLeave,
     DriverProfile,
@@ -326,10 +326,39 @@ class ServiceRepairViewSet(CompanyScopedQuerysetMixin, viewsets.ModelViewSet):
     model = ServiceRepair
     serializer_class = ServiceRepairSerializer
 
+    def perform_create(self, serializer):
+        entry = serializer.save(company=self.request.user.company)
+        try:
+            publish_service({
+                "event": "service.created",
+                "company_id": entry.company_id,
+                "service_id": entry.id,
+                "plate_number": entry.vehicle.plate_number if entry.vehicle else None,
+                "date": str(entry.date),
+                "cost": str(entry.cost),
+            })
+        except Exception as e:
+            print(f"[RabbitMQ] Service publish error: {e}")
+
 
 class FuelEntryViewSet(CompanyScopedQuerysetMixin, viewsets.ModelViewSet):
     model = FuelEntry
     serializer_class = FuelEntrySerializer
+
+    def perform_create(self, serializer):
+        entry = serializer.save(company=self.request.user.company)
+        try:
+            publish_fuel({
+                "event": "fuel.created",
+                "company_id": entry.company_id,
+                "fuel_id": entry.id,
+                "plate_number": entry.vehicle.plate_number if entry.vehicle else None,
+                "entry_type": entry.entry_type,
+                "date": str(entry.date),
+                "liters": str(entry.liters),
+            })
+        except Exception as e:
+            print(f"[RabbitMQ] Fuel publish error: {e}")
 
 
 class PayrollEntryViewSet(CompanyScopedQuerysetMixin, viewsets.ModelViewSet):

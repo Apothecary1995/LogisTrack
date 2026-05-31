@@ -188,7 +188,7 @@ func consumeEvents(url string, hub *Hub) error {
 		return err
 	}
 
-	patterns := []string{"trip.#", "vehicle.#", "notification.#", "export.#"}
+	patterns := []string{"trip.#", "vehicle.#", "notification.#", "export.#", "service.#", "fuel.#"}
 	for _, pattern := range patterns {
 		ch.QueueBind(q.Name, pattern, "logistrack.events", false, nil)
 	}
