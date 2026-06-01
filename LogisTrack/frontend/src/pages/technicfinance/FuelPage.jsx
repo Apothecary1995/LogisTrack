@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import PageHeader from "../../components/PageHeader";
 import TableWrap from "../../components/TableWrap";
 import { useAuth } from "../../context/AuthContext";
+import { useOfflineRequest } from "../../hooks/useOfflineRequest";
+import { useWebSocket } from "../../hooks/useWebSocket";
 import { formatCurrency, formatDate } from "../../lib/formatters";
 
 const initialForm = {
@@ -15,6 +17,7 @@ const initialForm = {
 
 function FuelPage() {
   const { authRequest } = useAuth();
+  const { offlinePost } = useOfflineRequest(authRequest);
   const [entryType, setEntryType] = useState("fuel");
   const [vehicles, setVehicles] = useState([]);
   const [mergedRows, setMergedRows] = useState([]);
@@ -22,7 +25,7 @@ function FuelPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setError("");
     try {
       const [vehicleResponse, mergedResponse] = await Promise.all([
@@ -37,12 +40,20 @@ function FuelPage() {
     } catch (loadError) {
       setError(loadError.message);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authRequest]);
+
+  const handleWsEvent = useCallback((event) => {
+    if (event.type === "fuel.created") {
+      loadData();
+    }
+  }, [loadData]);
+
+  useWebSocket(handleWsEvent);
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadData]);
 
   const onChange = (event) => {
     setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
@@ -53,20 +64,23 @@ function FuelPage() {
     setError("");
     setSuccess("");
 
+    const payload = {
+      ...form,
+      vehicle: Number(form.vehicle),
+      entry_type: entryType,
+      liters: form.liters || 0,
+      amount: form.amount || 0,
+    };
+
     try {
-      await authRequest("/fuel-entries/", {
-        method: "POST",
-        body: JSON.stringify({
-          ...form,
-          vehicle: Number(form.vehicle),
-          entry_type: entryType,
-          liters: form.liters || 0,
-          amount: form.amount || 0,
-        }),
-      });
-      setSuccess(entryType === "fuel" ? "Fuel Entry eklendi." : "AdBlue Entry eklendi.");
+      const result = await offlinePost("/fuel-entries/", payload, "pending_fuel_entries");
+      if (result?.offline) {
+        setSuccess(result.message);
+      } else {
+        setSuccess(entryType === "fuel" ? "Fuel Entry eklendi." : "AdBlue Entry eklendi.");
+        await loadData();
+      }
       setForm((prev) => ({ ...initialForm, vehicle: prev.vehicle }));
-      await loadData();
     } catch (submitError) {
       setError(submitError.message);
     }

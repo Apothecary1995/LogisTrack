@@ -16,6 +16,9 @@ export function useOfflineRequest(authRequest) {
       });
       return result;
     } catch (err) {
+      if (err.isAuthError) {
+        throw err;
+      }
       console.warn("[OfflineRequest] Request failed, saving locally:", err.message);
       await savePending(storeName, data);
       return { offline: true, message: "Bağlantı hatası. Yerel olarak kaydedildi." };

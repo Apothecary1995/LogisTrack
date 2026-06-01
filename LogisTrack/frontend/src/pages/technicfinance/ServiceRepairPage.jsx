@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import PageHeader from "../../components/PageHeader";
 import TableWrap from "../../components/TableWrap";
 import { useAuth } from "../../context/AuthContext";
+import { useOfflineRequest } from "../../hooks/useOfflineRequest";
+import { useWebSocket } from "../../hooks/useWebSocket";
 import { formatCurrency, formatDate } from "../../lib/formatters";
 
 const initialForm = {
@@ -16,13 +18,14 @@ const initialForm = {
 
 function ServiceRepairPage() {
   const { authRequest } = useAuth();
+  const { offlinePost } = useOfflineRequest(authRequest);
   const [vehicles, setVehicles] = useState([]);
   const [entries, setEntries] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setError("");
     try {
       const [vehicleResponse, serviceResponse] = await Promise.all([
@@ -37,12 +40,20 @@ function ServiceRepairPage() {
     } catch (loadError) {
       setError(loadError.message);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authRequest]);
+
+  const handleWsEvent = useCallback((event) => {
+    if (event.type === "service.created") {
+      loadData();
+    }
+  }, [loadData]);
+
+  useWebSocket(handleWsEvent);
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadData]);
 
   const onChange = (event) => {
     setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
@@ -53,19 +64,22 @@ function ServiceRepairPage() {
     setError("");
     setSuccess("");
 
+    const payload = {
+      ...form,
+      vehicle: Number(form.vehicle),
+      entry_km: form.entry_km || 0,
+      cost: form.cost || 0,
+    };
+
     try {
-      await authRequest("/service-repairs/", {
-        method: "POST",
-        body: JSON.stringify({
-          ...form,
-          vehicle: Number(form.vehicle),
-          entry_km: form.entry_km || 0,
-          cost: form.cost || 0,
-        }),
-      });
-      setSuccess("Servis kaydi olusturuldu.");
+      const result = await offlinePost("/service-repairs/", payload, "pending_service_repairs");
+      if (result?.offline) {
+        setSuccess(result.message);
+      } else {
+        setSuccess("Servis kaydi olusturuldu.");
+        await loadData();
+      }
       setForm((prev) => ({ ...initialForm, vehicle: prev.vehicle }));
-      await loadData();
     } catch (submitError) {
       setError(submitError.message);
     }

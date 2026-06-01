@@ -1,5 +1,5 @@
 const DB_NAME = "logistrack-offline";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export function openDB() {
   return new Promise((resolve, reject) => {
@@ -12,6 +12,12 @@ export function openDB() {
       }
       if (!db.objectStoreNames.contains("pending_vehicles")) {
         db.createObjectStore("pending_vehicles", { keyPath: "id", autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains("pending_service_repairs")) {
+        db.createObjectStore("pending_service_repairs", { keyPath: "id", autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains("pending_fuel_entries")) {
+        db.createObjectStore("pending_fuel_entries", { keyPath: "id", autoIncrement: true });
       }
     };
 
@@ -56,5 +62,7 @@ export async function deletePending(storeName, id) {
 export async function countPending() {
   const trips = await getPending("pending_trips");
   const vehicles = await getPending("pending_vehicles");
-  return trips.length + vehicles.length;
+  const services = await getPending("pending_service_repairs");
+  const fuels = await getPending("pending_fuel_entries");
+  return trips.length + vehicles.length + services.length + fuels.length;
 }
