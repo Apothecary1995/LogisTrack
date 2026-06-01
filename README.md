@@ -1,6 +1,6 @@
 # LogisTrack
 
-**Fleet and Trip Management System** — Production-ready ERP for logistics companies.
+**Fleet and Trip Management System**  ERP for logistics companies.
 
 Built for [Metalog](https://metalog.ba) as part of IUS CS308 Software Engineering, Spring 2026.
 
@@ -78,7 +78,7 @@ Internet → Cloudflare Tunnel + SSL
 - **PDF export via email** — custom Go lexer tokenizes Excel → gofpdf → Gmail
 - **Welcome email** — sent on registration via Notification Worker
 - **Forgot password email** — sent on request via Notification Worker
-- **CouchDB sync** — every trip and vehicle synced to CouchDB
+- **IndexDB sync** — every trip and vehicle synced to IndexDB for caching
 
 ### Real-time
 - **WebSocket server** — listens to all RabbitMQ events, broadcasts to all browsers
@@ -168,7 +168,7 @@ LogisTrack/
 
 ### Prerequisites
 - Docker and Docker Compose
-- Go 1.21+
+- Go 1.26.2
 - Gmail account with App Password
 
 ### 1. Clone
@@ -290,7 +290,7 @@ python manage.py test api --verbosity=2
 
 ## Deployment
 
-Production runs on Excalibur G900 (i7-11800H, Ubuntu 26.04) behind Cloudflare Tunnel.
+Production runs on (i7-11800H   processor,Linux Ubuntu server 26.04) behind Cloudflare Tunnel.
 
 Every merge to `main` triggers:
 1. GitHub Actions runs all Go tests + E2E Playwright tests
@@ -303,7 +303,7 @@ Every merge to `main` triggers:
 
 | Member | Role |
 |--------|------|
-| Ahmet Cengiz | DevOps, Infrastructure, 8 Go Microservices |
+| Ahmet Cengiz | DevOps, Infrastructure, Go Microservices |
 | Firat Aras Uzun | Financial Module |
 | Cem Berke Tepedelen | Fleet Management |
 | Muhammed Said Sincar | Trip Management |
