@@ -324,3 +324,4 @@ Every merge to `main` triggers:
 ## License
 
 MIT license
+
